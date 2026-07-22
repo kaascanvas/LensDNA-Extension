@@ -2914,3 +2914,56 @@ document.addEventListener('click', (e) => {
         });
     }
 });
+
+// Listener for Manual Hardcoded Monid Scraper Presets (Verified Native Monid Tools)
+const btnRunMonidPreset = document.getElementById('btnRunMonidPreset');
+if (btnRunMonidPreset) {
+    btnRunMonidPreset.addEventListener('click', async () => {
+        const presetKey = document.getElementById('extMonidPreset').value;
+        const inputField = document.getElementById('extManualInject');
+        const queryText = inputField.value.trim() || prompt(target.promptMsg || "Enter input query:", "WebRTC AI Agents");
+
+        if (!queryText) return;
+
+        const presetMap = {
+            exa_search: { provider: "exa", endpoint: "/search", promptMsg: "Enter search query for Exa AI:" },
+            apify_tweet: { provider: "apify", endpoint: "/apidojo/tweet-scraper", promptMsg: "Enter search keyword or hashtag for X/Twitter:" },
+            youtube_transcript: { provider: "apify", endpoint: "/starvibe/youtube-video-transcript", promptMsg: "Enter YouTube video URL:" },
+            apollo_company: { provider: "apollo", endpoint: "/mixed_companies/search", promptMsg: "Enter company keyword or industry:" },
+            akta_company: { provider: "akta", endpoint: "/v1/company/search", promptMsg: "Enter company name or domain:" },
+            elevenlabs_tts: { provider: "elevenlabs", endpoint: "/text-to-speech", promptMsg: "Enter text to convert to speech:" },
+            apify_google_news: { provider: "apify", endpoint: "/data_xplorer/google-news-scraper-fast", promptMsg: "Enter news topic or query:" },
+            gmaps_extractor: { provider: "apify", endpoint: "/compass/google-maps-extractor", promptMsg: "Enter location & query (e.g., 'Coffee shops in London'):" },
+            bytedance_video: { provider: "bytedance", endpoint: "/v1/video/seedance-2.0-mini", promptMsg: "Enter video generation prompt:" },
+            semrush_domain: { provider: "semrush", endpoint: "/domain_ranks", promptMsg: "Enter target domain (e.g. example.com):" },
+            pdl_company: { provider: "peopledatalabs", endpoint: "/v5/company/enrich", promptMsg: "Enter company domain (e.g. stripe.com):" },
+            apify_amazon: { provider: "apify", endpoint: "/trgar/amazon-search-scraper", promptMsg: "Enter Amazon product keyword:" }
+        };
+
+        const target = presetMap[presetKey];
+        if (!target) return;
+
+        appendTranscript('System', `⚡ Executing verified Monid preset: ${target.provider} -> ${target.endpoint} for query: "${queryText}"`);
+
+        try {
+            const mKey = document.getElementById('extMonidKey')?.value || '';
+            const resp = await fetch(`${SERVER_URL}/api/monid/run`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: target.provider,
+                    endpoint: target.endpoint,
+                    input: { query: queryText },
+                    await_result: true,
+                    monid_key: mKey
+                })
+            });
+
+            const result = await resp.json();
+            const outputClean = result.output || result.data || result;
+            appendTranscript('System', `✅ Distilled Scraper Result Received:\n${JSON.stringify(outputClean, null, 2).slice(0, 3000)}`);
+        } catch (err) {
+            appendTranscript('Error', `Preset execution failed: ${err.message}`);
+        }
+    });
+}
