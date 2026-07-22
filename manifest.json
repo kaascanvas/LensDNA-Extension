@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "LensDNA Sovereign Agent",
+  "version": "1.0.1",
+  "description": "Omnipresent AI Co-Pilot & WebRTC Audio Engine",
+  "permissions": [
+    "sidePanel",
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage",
+    "tabCapture",
+    "contextMenus",
+    "identity"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open LensDNA Console",
+    "default_icon": "app-icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "icons": {
+    "16": "app-icon.png",
+    "32": "app-icon.png",
+    "48": "app-icon.png",
+    "128": "app-icon.png"
+  }
+}

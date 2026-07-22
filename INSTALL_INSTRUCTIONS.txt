@@ -1,0 +1,40 @@
+LensDNA Sovereign Agent - Chrome Extension v1.0.1
+=================================================
+
+Welcome to the Omnipresent AI Co-Pilot & WebRTC Audio Engine.
+Because this is a Sovereign OS tool, it is installed locally on your machine.
+
+CHANGELOG v1.0.1
+- Fixed Persistent Memory re-hydration bridge: stored facts are now force-injected into Nexus Prime runtime context on every session start (client-side fallback if server-side injection fails).
+- Version bump for stress-test stability.
+
+Follow these 5 simple steps to install the extension in Google Chrome, Brave, or Edge:
+
+STEP 1: EXTRACT THE ZIP FILE
+Extract (unzip) this downloaded folder to a safe location on your computer (for example, your Documents or Desktop folder).
+
+STEP 2: OPEN CHROME EXTENSIONS
+Open Google Chrome and type the following into your URL address bar, then press Enter:
+chrome://extensions/
+
+STEP 3: ENABLE DEVELOPER MODE
+In the top right corner of the Extensions page, you will see a toggle switch labeled "Developer mode". 
+Click it to turn it ON.
+
+STEP 4: LOAD UNPACKED
+Once Developer Mode is on, a new menu bar will appear at the top left. 
+Click the button that says "Load unpacked". 
+A file browser window will open. Select the unzipped folder from Step 1 (make sure you select the folder containing the manifest.json file).
+
+STEP 5: PIN & UPLINK
+The LensDNA extension is now installed! 
+1. Click the "Puzzle Piece" icon in the top right of your Chrome browser.
+2. Find "LensDNA Sovereign Agent" and click the "Pin" icon next to it.
+3. Click the newly pinned LensDNA icon to open the Side Panel console.
+4. Enter your API keys into the Sovereign Keyring and click "INITIATE UPLINK".
+
+---
+Need Help? 
+Contact Support: https://x.com/LensDJing
+Architect: Hans Johannes Schulte (LensDNA OS)
+

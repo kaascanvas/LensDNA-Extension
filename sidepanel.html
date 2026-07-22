@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <script src="socket.io.min.js"></script>
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --bg: #09090b; 
+            --panel: #141417;
+            --panel-hover: #1c1c21;
+            --cyan: #00e5ff; --cyan-dim: rgba(0, 229, 255, 0.15);
+            --neon: #00ff41; --neon-dim: rgba(0, 255, 65, 0.15);
+            --purple: #b000ff; --purple-dim: rgba(176, 0, 255, 0.15);
+            --text: #ffffff; --text-mut: #888888; 
+            --border: #27272a; --border-light: #3f3f46;
+            --alert: #ff3b30;
+            --label-color: #e5e7eb;
+        }
+        
+        [data-theme="light"] {
+            --bg: #f4f4f5; 
+            --panel: #ffffff;
+            --panel-hover: #f9f9fb;
+            --cyan: #0088aa; --cyan-dim: rgba(0, 136, 170, 0.1);
+            --neon: #009933; --neon-dim: rgba(0, 153, 51, 0.08);
+            --purple: #8800cc; --purple-dim: rgba(136, 0, 204, 0.08);
+            --text: #09090b; --text-mut: #71717a; 
+            --border: #e4e4e7; --border-light: #d4d4d8;
+            --label-color: #222222;
+        }
+
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; }
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; padding: 0;
+            height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .mono { font-family: 'Share Tech Mono', monospace; }
+
+        /* --- APP SHELL --- */
+        .app-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0; z-index: 10;
+        }
+        .brand-title {
+            color: var(--cyan); margin: 0; font-size: 1.1rem;
+            text-shadow: 0 0 10px var(--cyan-dim); letter-spacing: 1px;
+        }
+        
+        .app-workspace {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            padding: 15px; position: relative;
+            display: flex; flex-direction: column;
+        }
+        /* Sleek scrollbar */
+        .app-workspace::-webkit-scrollbar { width: 4px; }
+        .app-workspace::-webkit-scrollbar-track { background: transparent; }
+        .app-workspace::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+        /* --- COMMAND HUB (COCKPIT) --- */
+        .command-hub {
+            flex-shrink: 0; background: var(--panel);
+            border-top: 1px solid var(--border);
+            padding: 12px 15px; display: flex; flex-direction: column; gap: 10px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+            z-index: 20;
+        }
+
+        /* --- BUTTONS & CONTROLS --- */
+        .btn { 
+            background: var(--panel); color: var(--text); 
+            border: 1px solid var(--border); padding: 10px 12px; 
+            font-weight: 600; border-radius: 8px; cursor: pointer; 
+            text-transform: uppercase; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn:hover { background: var(--border); }
+        
+        .btn-uplink {
+            width: 100%; padding: 14px; font-size: 0.95rem; font-weight: 800;
+            background: linear-gradient(90deg, rgba(0,229,255,0.1), rgba(0,255,65,0.1));
+            border: 1px solid var(--cyan); color: var(--cyan);
+            box-shadow: 0 0 15px var(--cyan-dim); letter-spacing: 1px;
+        }
+        .btn-uplink:hover { background: var(--cyan); color: #000; box-shadow: 0 0 20px var(--cyan); }
+
+        .btn-icon { padding: 10px; border-radius: 8px; font-size: 1rem; }
+        
+        .hub-top-row { display: flex; gap: 8px; }
+        .hub-tools-row { display: flex; gap: 6px; }
+        .hub-tools-row .btn { flex: 1; font-size: 0.65rem; padding: 8px 4px; }
+        
+        .btn-green { border-color: var(--neon); color: var(--neon); background: var(--neon-dim); }
+        .btn-cyan { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+        .btn-purple { border-color: var(--purple); color: var(--purple); background: var(--purple-dim); }
+
+        /* --- INPUTS --- */
+        .input-modern {
+            width: 100%; background: var(--bg) !important;
+            border: 1px solid var(--border) !important; color: var(--text) !important;
+            border-radius: 8px; padding: 12px; font-size: 0.85rem;
+            outline: none; transition: border 0.3s;
+        }
+        .input-modern:focus { border-color: var(--cyan) !important; box-shadow: 0 0 10px var(--cyan-dim); }
+        textarea.input-modern { resize: none; height: 60px; }
+
+        /* --- SETTINGS DRAWER --- */
+        .column-left {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: var(--bg); z-index: 9999;
+            display: flex; flex-direction: column;
+            transform: translateY(0);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .column-left.collapsed {
+            transform: translateY(100%);
+            display: flex !important; 
+        }
+        .drawer-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px; background: var(--panel); border-bottom: 1px solid var(--border);
+        }
+        .drawer-content {
+            flex: 1; overflow-y: auto; padding: 15px;
+        }
+        .drawer-content::-webkit-scrollbar { width: 4px; }
+        .drawer-content::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+        
+        .btn-close-drawer {
+            background: rgba(255, 59, 48, 0.1); color: var(--alert); border: 1px solid var(--alert);
+            padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;
+        }
+
+        /* --- CARDS & PROMOS --- */
+        .form-group { margin-bottom: 15px; }
+        label, .form-group label { display: block; font-size: 0.65rem; font-weight: 500; color: var(--label-color); margin-bottom: 6px; text-transform: uppercase; opacity: 1; }
+        
+        .promo-box { 
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative;
+        }
+        .promo-title { font-size: 0.75rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .promo-link { 
+            display: block; background: var(--bg); color: var(--text); 
+            padding: 10px; text-align: center; text-decoration: none; 
+            border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-light); 
+            margin-bottom: 8px; font-weight: 600; transition: 0.2s;
+        }
+        .promo-link:hover { border-color: var(--text); }
+        .promo-link.premium { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+
+        /* --- DJ MIXER --- */
+        #dj-matrix-panel { 
+            background: var(--panel); border: 1px solid var(--purple); 
+            border-radius: 10px; padding: 10px; margin-bottom: 15px; 
+            display: flex; flex-direction: column; box-shadow: 0 5px 20px rgba(0,0,0,0.3); 
+        }
+        .dj-channels { display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        .dj-channels::-webkit-scrollbar { width: 4px; }
+        .dj-channels::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+        .dj-channel { 
+            display: flex; align-items: center; justify-content: space-between; 
+            gap: 8px; background: var(--panel-hover); border: 1px solid var(--border); 
+            border-radius: 8px; padding: 8px; transition: 0.3s; 
+        }
+
+        /* --- TACTILE VERTICAL EQUALIZERS --- */
+        .fader-vertical {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            flex-shrink: 0;
+            gap: 2px;
+        }
+        .fader-vertical span {
+            font-size: 0.5rem;
+            color: var(--text-mut);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .fader-vertical input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            writing-mode: vertical-lr;
+            direction: rtl;
+            height: 50px;
+            width: 8px;
+            cursor: pointer;
+            background: var(--border) !important;
+            border: none !important;
+            border-radius: 3px;
+            outline: none;
+            padding: 0;
+            margin: 4px 0 !important;
+        }
+        .fader-vertical input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1.5px solid var(--cyan);
+            box-shadow: 0 0 10px var(--cyan);
+            cursor: pointer;
+        }
+        .fader-vertical input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* --- GLOBAL RANGE MODS --- */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+        
+        /* --- TRANSCRIPT --- */
+        #transcript { overflow-wrap: anywhere; word-break: break-word; font-size: 0.85rem; padding-bottom: 20px;}
+        
+        .clear-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-mut); cursor: pointer; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================== -->
+    <!-- 1. MAIN APP WORKSPACE & COCKPIT            -->
+    <!-- ========================================== -->
+    
+    <header class="app-header">
+        <h1 class="brand-title mono">NEXUS PRIME</h1>
+        <div style="display: flex; gap: 8px;">
+            <button id="btnToggleSettings" class="btn mono" style="padding: 8px 12px; font-size: 0.75rem; border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim);">⚙️ CONFIG</button>
+        </div>
+    </header>
+
+    <main class="app-workspace">
+        
+        <!-- TRANSCRIPT CHAT -->
+        <div id="transcript"></div>
+        
+        <!-- DJ MIXER (Moved below chat flow) -->
+        <div id="dj-matrix-panel" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="color:var(--purple); font-weight:bold; font-size:0.85rem; letter-spacing:1px;" class="mono">🎛️ 8-CHANNEL MATRIX</span>
+                <div style="display: flex; gap: 6px;">
+                    <button id="btn-sync-play" class="btn mono btn-green" style="padding:4px 8px; font-size:0.65rem;">▶️ SYNC</button>
+                    <button id="btn-add-channel" class="btn mono btn-purple" style="padding:4px 8px; font-size:0.65rem;">+ ADD CH</button>
+                    <button class="close-card-btn" data-target="dj-matrix-panel" style="background:none;border:none;color:var(--text-mut);cursor:pointer;font-size:1.2rem;">×</button>
+                </div>
+            </div>
+            <div class="dj-channels" id="channels-container"></div>
+            <div style="display:flex; gap:8px; margin-top:10px; align-items: center;">
+                <div style="width: 60px;">
+                    <label style="font-size:0.55rem; color:var(--text-mut); margin-bottom:2px;" class="mono">DUR(s)</label>
+                    <input type="number" id="lyriaDur" class="input-modern mono" value="25" style="padding:6px;">
+                </div>
+                <div style="width: 60px;">
+                    <label style="font-size:0.55rem; color:var(--text-mut); margin-bottom:2px;" class="mono">BPM</label>
+                    <input type="number" id="lyriaBpm" class="input-modern mono" value="138" style="padding:6px;">
+                </div>
+                <button id="btn-lyria-gen" class="btn mono" style="background:var(--purple); color:#fff; border:none; flex:1; margin-top:14px; font-size: 0.75rem;">SYNTHESIZE AUDIO</button>
+            </div>
+        </div>
+
+        <!-- SIP DIALER (Moved below chat flow) -->
+        <div id="dialer-panel" class="promo-box" style="display: none; border-color: var(--purple); background: var(--purple-dim); box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span class="promo-title mono" style="color: var(--purple); margin: 0;">📞 Outbound SIP Proxy Dialer</span>
+                <button class="close-card-btn" data-target="dialer-panel" style="background:none;border:none;color:var(--text-mut);cursor:pointer;font-size:1.2rem;">×</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <div style="flex: 1;">
+                    <label>RECIPIENT (E.164)</label>
+                    <input type="text" id="outboundToNumber" class="input-modern mono" placeholder="+316123..." style="border-color: rgba(176,0,255,0.3) !important;">
+                </div>
+                <div style="flex: 1;">
+                    <label>SENDER ID</label>
+                    <input type="text" id="outboundFromNumber" class="input-modern mono" value="+3197010222512" style="border-color: rgba(176,0,255,0.3) !important;">
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <button id="btnCallVoice" class="btn btn-green mono" style="flex: 1; font-size: 0.65rem;">📞 LIVE AGENT</button>
+                <button id="btnCallSong" class="btn btn-cyan mono" style="flex: 1; font-size: 0.65rem;">🎵 PLAY SONG</button>
+            </div>
+            <div id="outboundStatusText" style="font-size: 0.65rem; color: var(--text-mut); text-align: center;" class="mono">Standard telephone proxy standing by.</div>
+        </div>
+
+        <!-- Live Hardware Sensor Feed (Moved below chat flow) -->
+        <div id="nexusVisionContainer" style="width: 100%; height: 200px; min-height: 150px; max-height: 85vh; resize: vertical; overflow: hidden; background: #000; border: 1px dashed var(--border); border-radius: 8px; display: none; position: relative; margin-bottom: 15px;">
+            <video id="nexusVisionFeed" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+            <div style="position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; font-size: 0.55rem; color: var(--neon); font-weight: bold;" class="mono">OPTIC TRANSMITTER ACTIVE</div>
+            <button id="btnFlipVision" class="mono" style="position: absolute; top: 6px; right: 142px; background: rgba(0,0,0,0.8); color: var(--cyan); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 0.55rem; cursor: pointer; font-weight: bold; z-index: 50;">🔄 FLIP</button>
+            <button id="btnMinimizeVision" class="mono" style="position: absolute; top: 6px; right: 75px; background: rgba(0,0,0,0.8); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 0.55rem; cursor: pointer; font-weight: bold; z-index: 50;">[ + ] EXPAND</button>
+            <button id="btnCloseVision" class="mono" style="position: absolute; top: 6px; right: 6px; background: rgba(255, 59, 48, 0.8); color: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 0.55rem; cursor: pointer; font-weight: bold; z-index: 50;">✕ CLOSE</button>
+        </div>
+
+        <!-- Music Graph Frequency Visualizer -->
+        <canvas id="musicGraph" width="280" height="50" style="background: rgba(0,0,0,0.15); border: 1px solid var(--border); border-radius: 8px; width: 100%; height: 55px; margin-bottom: 15px; display: none;"></canvas>
+        
+        <!-- Hidden Voice Orb Anchor to prevent JS crashes -->
+        <div id="voiceOrb" style="display: none;"></div>
+
+    </main>
+
+    <!-- COMMAND HUB (BOTTOM) -->
+    <footer class="command-hub">
+        
+        <div class="hub-top-row">
+            <button id="btnConnect" class="btn-uplink mono" style="flex: 2; width: auto;">INITIATE UPLINK</button>
+            <button id="btnExtractDom" class="btn mono btn-cyan" style="flex: 1; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px;" title="Extract Page DOM">📄 DOM</button>
+            <button id="btnToggleDialer" class="btn btn-icon btn-green" title="SIP Dialer">📞</button>
+            <button id="btnThemeToggleHub" class="btn btn-icon" style="color: var(--text);" title="Toggle Theme">🌓</button>
+            <button id="btnToggleMixer" class="btn btn-icon btn-purple" title="Mixer">🎛️</button>
+            <button id="btnSilence" class="btn btn-icon btn-cyan" title="Silent Mode">🔊</button>
+        </div>
+
+        <textarea id="extManualInject" class="input-modern mono" placeholder="Command the AI, paste code, or ask questions..."></textarea>
+        
+        <div class="hub-tools-row">
+            <button id="btnSnap" class="btn btn-green mono">📸 TAB</button>
+            <button id="btnCamera" class="btn btn-cyan mono">📷 CAM</button>
+            <button id="btnScreen" class="btn btn-purple mono">🔄 SYNC</button>
+            <button id="btnSendText" class="btn btn-green mono" style="background:var(--neon); color:#000;">SEND ➔</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-mut);" class="mono">
+            <span id="mediaStatusText">Sensors idle.</span>
+        </div>
+    </footer>
+
+
+    <!-- ========================================== -->
+    <!-- 2. SETTINGS DRAWER (SLIDES UP OVER APP)    -->
+    <!-- ========================================== -->
+    
+    <div class="column-left collapsed">
+        
+        <header class="drawer-header">
+            <h2 class="brand-title mono" style="color:var(--text); text-shadow:none;">⚙️ CONFIGURATION</h2>
+            <div style="display: flex; gap: 8px;">
+                <button id="btnThemeToggle" class="btn mono" style="padding: 6px 10px; font-size: 0.65rem;">🌓 THEME</button>
+                <button id="btnHideSettings" class="btn-close-drawer mono">✕ CLOSE</button>
+            </div>
+        </header>
+        
+        <div class="drawer-content">
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="https://try.elevenlabs.io/lensdj" target="_blank" rel="noopener noreferrer">
+                    <img id="elevenBanner" src="https://eleven-public-cdn.elevenlabs.io/payloadcms/cy7rxce8uki-IIElevenLabsGrants%201.webp" alt="ElevenLabs Grants" style="width: 100%; max-width: 180px; border-radius: 4px;">
+                </a>
+                <div style="font-size: 0.55rem; color: var(--text-mut); margin-top: 5px; text-transform: uppercase;">Supported by ElevenLabs Developer Grants</div>
+            </div>
+
+            <!-- KEYRINGS -->
+            <div class="promo-box" id="promoCompute">
+                <div class="promo-title mono" style="color: var(--neon);">COMPUTE KEYRINGS</div>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="promo-link mono">Get Google API Key (Free Tier)</a>
+                <a href="https://try.elevenlabs.io/lensdj" target="_blank" class="promo-link premium mono">🎙️ Get ElevenLabs Creator Plan</a>
+                <a href="https://fish.audio/?fpr=lens51" target="_blank" class="promo-link mono" style="border-color: #ff00ea; color: #ff00ea;">🐟 GET FISH AUDIO KEY</a>
+                <a href="https://console.x.ai/" target="_blank" class="promo-link mono" style="border-color: var(--text); color: var(--text);">✖️ GET GROK API KEY</a>
+                <a href="https://app.monid.ai/access/api-keys" target="_blank" class="promo-link mono" style="border-color: #f59e0b; color: #f59e0b;">🔍 GET MONID API KEY</a>
+            </div>
+
+            <div class="form-group">
+                <label>ElevenLabs API Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="extElevenKey" class="input-modern mono" placeholder="Enter key...">
+                    <button class="clear-btn" data-input="extElevenKey">×</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Gemini API Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="extGeminiKey" class="input-modern mono" placeholder="Enter key (AIzaSy...)">
+                    <button class="clear-btn" data-input="extGeminiKey">×</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Fish Audio API Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="extFishKey" class="input-modern mono" style="border-color: #ff00ea !important;">
+                    <button class="clear-btn" data-input="extFishKey">×</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>xAI Grok Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="extGrokKey" class="input-modern mono" style="border-color: #555 !important;">
+                    <button class="clear-btn" data-input="extGrokKey">×</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Monid API Key (Data Recon)</label>
+                <div style="position:relative;">
+                    <input type="password" id="extMonidKey" class="input-modern mono" style="border-color: #f59e0b !important;" placeholder="monid_live_...">
+                    <button class="clear-btn" data-input="extMonidKey">×</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Custom Voice ID</label>
+                <div style="position:relative;">
+                    <input type="text" id="extVoiceId" class="input-modern mono" style="border-color: var(--cyan) !important;">
+                    <button class="clear-btn" data-input="extVoiceId">×</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Co-Pilot Brain (LLM)</label>
+                <select id="extLlmSelect" class="input-modern mono" style="border-color: var(--purple) !important; cursor: pointer;">
+                    <optgroup label="OpenAI">
+                        <option value="gpt-5.5">GPT-5.5</option>
+                        <option value="gpt-5.4">GPT-5.4</option>
+                        <option value="gpt-5.4-mini">GPT-5.4 Mini</option>
+                        <option value="gpt-5.4-nano">GPT-5.4 Nano</option>
+                        <option value="gpt-5.2">GPT-5.2</option>
+                        <option value="gpt-5.2-chat-latest">GPT-5.2 Chat Latest</option>
+                        <option value="gpt-5.1">GPT-5.1</option>
+                        <option value="gpt-5">GPT-5</option>
+                        <option value="gpt-5-mini">GPT-5 Mini</option>
+                        <option value="gpt-5-nano">GPT-5 Nano</option>
+                        <option value="gpt-4.1">GPT-4.1</option>
+                        <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                        <option value="gpt-4.1-nano">GPT-4.1 Nano</option>
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    </optgroup>
+                    <optgroup label="Anthropic">
+                        <option value="claude-opus-4-7">Claude Opus 4.7</option>
+                        <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                        <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                        <option value="claude-sonnet-4">Claude Sonnet 4</option>
+                        <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+                    </optgroup>
+                    <optgroup label="Google">
+                        <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                        <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
+                        <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+                        <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite Preview</option>
+                        <option value="gemini-3-pro-preview">Gemini 3 Pro Preview</option>
+                        <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
+                        <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
+                        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                    </optgroup>
+                    <optgroup label="ElevenLabs">
+                        <option value="qwen36-35b-a3b">Qwen3.6-35B-A3B</option>
+                        <option value="qwen35-397b-a17b">Qwen3.5-397B-A17B</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- HIPAA / Zero Retention Subsection -->
+            <div class="promo-box" id="hipaaSubsection" style="border-color: var(--alert); background: rgba(255, 59, 48, 0.03); margin-top: 15px;">
+                <div class="promo-title mono" style="color: var(--alert); margin-bottom: 8px;">🛡️ HIPAA / Zero Retention</div>
+                
+                <div style="font-size: 0.65rem; color: var(--text-mut); line-height: 1.4; margin-bottom: 12px;" class="mono">
+                    This platform is <strong style="color: var(--text);">HIPAA-eligible when used with an Enterprise plan, signed BAA, and Zero Retention Mode enabled.</strong>
+                </div>
+
+                <!-- Status Indicators & Gated Checkboxes -->
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <input type="checkbox" id="chkEnterprisePlan" style="accent-color: var(--alert); cursor: pointer;">
+                        <label for="chkEnterprisePlan" style="font-size: 0.65rem; cursor: pointer; margin: 0; font-weight: bold;">Enterprise Plan Active</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <input type="checkbox" id="chkSignedBAA" style="accent-color: var(--alert); cursor: pointer;">
+                        <label for="chkSignedBAA" style="font-size: 0.65rem; cursor: pointer; margin: 0; font-weight: bold;">Signed BAA with ElevenLabs</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="chkZeroRetention" style="accent-color: var(--alert); cursor: pointer;">
+                        <label for="chkZeroRetention" style="font-size: 0.65rem; cursor: pointer; margin: 0; font-weight: bold;">Zero Retention Mode (ZRM) Enabled</label>
+                    </div>
+                </div>
+
+                <!-- Dynamic Status Badge -->
+                <div id="hipaaStatusBadge" class="mono" style="font-size: 0.65rem; padding: 6px; text-align: center; border-radius: 4px; font-weight: bold; background: rgba(255,59,48,0.1); border: 1px solid var(--alert); color: var(--alert); margin-bottom: 12px;">
+                    STATUS: NOT YET ELIGIBLE
+                </div>
+
+                <!-- Local Storage Blocking Warning -->
+                <div id="hipaaActiveWarning" style="display: none; font-size: 0.6rem; color: var(--alert); line-height: 1.3; margin-bottom: 12px; padding: 8px; background: rgba(255, 59, 48, 0.08); border-radius: 4px;" class="mono">
+                    ⚠️ <strong>Local Retention Suspended:</strong> Transcripts, conversation logs, and memory extractions will not be saved to local storage, Chrome extension memory, or cache.
+                </div>
+
+                <!-- Custom Integration Caveat -->
+                <div style="font-size: 0.6rem; color: var(--text-mut); line-height: 1.3; margin-bottom: 12px;" class="mono">
+                    ℹ️ ElevenLabs Zero Retention Mode limits retention on the ElevenLabs side only. Any custom backend, proxy, database, analytics layer, or custom LLM provider must also be covered by the correct BAA and retention controls if PHI is processed.
+                </div>
+
+                <!-- Custom LLM Provider BAA Gating -->
+                <div id="customLlmAcknowledgeGroup" style="display: none; border-top: 1px dashed var(--border); padding-top: 10px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <input type="checkbox" id="chkCustomLlmBaa" style="accent-color: var(--alert); cursor: pointer; margin-top: 2px;">
+                        <label for="chkCustomLlmBaa" style="font-size: 0.6rem; color: var(--text-dim); cursor: pointer; margin: 0; text-transform: none; line-height: 1.3;">
+                            I acknowledge that my chosen Custom LLM provider is under a signed BAA and configured for zero retention or equivalent no-retention handling before PHI workflows are allowed.
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Dynamic Preconfigured Models Directory Link -->
+                <a href="https://elevenlabs.io/docs/eleven-agents/legal/hipaa#available-llms" target="_blank" class="promo-link mono" style="font-size: 0.6rem; padding: 8px; border-color: var(--border-light); color: var(--text-mut); margin-bottom: 10px;">
+                    🔗 View HIPAA-Eligible LLMs Directory
+                </a>
+
+                <!-- Compliance Responsibility Disclaimer -->
+                <div style="font-size: 0.55rem; color: var(--text-mut); line-height: 1.3; text-align: center; border-top: 1px solid var(--border); padding-top: 8px;" class="mono">
+                    This client helps configure HIPAA-eligible workflows, but the covered entity or business associate remains responsible for ensuring full compliance with all applicable laws and agreements.
+                </div>
+            </div>
+
+            <!-- MEMORY -->
+            <div class="promo-box" style="border-color: var(--neon); background: var(--neon-dim);">
+                <div class="promo-title mono" style="color: var(--neon);">🧠 Persistent Memory Layer</div>
+                <textarea id="extMemoryBox" class="input-modern mono" placeholder="No remembered profile facts yet..." style="height: 70px; margin-bottom: 10px;"></textarea>
+                <button id="btnWipeMemory" class="btn mono" style="border-color: var(--alert); color: var(--alert); background: rgba(255,59,48,0.1); width: 100%; font-size: 0.65rem;">🧹 WIPE PERSISTENT MEMORY</button>
+            </div>
+
+            <!-- TELEMETRY -->
+            <div style="margin-top: 20px; font-size:0.75rem; color:var(--text-mut);">
+                <strong style="color:var(--text); text-transform:uppercase; letter-spacing:1px; margin-bottom: 10px; display:inline-block;" class="mono">System Telemetry:</strong>
+                <div style="display:flex; justify-content:space-between; margin-top:8px; background:var(--bg); padding:8px; border-radius:6px; border:1px solid var(--border);" class="mono"><span>Live Latency:</span> <span id="telemetry-latency" style="color:var(--neon); font-weight:bold;">OFFLINE</span></div>
+                <div style="display:flex; justify-content:space-between; margin-top:8px; background:var(--bg); padding:8px; border-radius:6px; border:1px solid var(--border);" class="mono"><span>Signal Stability:</span> <span id="telephony-jitter" style="color:var(--cyan); font-weight:bold;">OFFLINE</span></div>
+                <div style="display:flex; justify-content:space-between; margin-top:8px; background:var(--bg); padding:8px; border-radius:6px; border:1px solid var(--border);" class="mono"><span>Logic Kernel:</span> <span id="telemetry-llm" style="color:var(--purple); font-weight:bold;">Gemini 2.5 Flash</span></div>
+            </div>
+
+            <!-- PRIVACY & TERMS -->
+            <div style="margin-top: 25px; text-align: center; border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 10px;">
+                <a href="https://lensdj.app/privacy.html" target="_blank" rel="noopener noreferrer" class="mono" style="color: var(--text-mut); font-size: 0.7rem; text-decoration: underline; text-transform: uppercase; letter-spacing: 0.5px;">
+                    🛡️ Privacy & Terms
+                </a>
+            </div>
+            
+        </div>
+    </div>
+
+    <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
