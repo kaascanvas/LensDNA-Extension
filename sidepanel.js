@@ -685,10 +685,10 @@ btnConnect.addEventListener('click', async () => {
     if (isHipaaActive && extLlmSelect) {
         const val = extLlmSelect.value;
         const preconfiguredHipaaList = [
-            'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.0-flash-lite',
-            'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro',
-            'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-sonnet-4-5', 'claude-sonnet-4', 'claude-haiku-4-5',
-            'qwen36-35b-a3b', 'qwen35-397b-a17b'
+            'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash',
+            'claude-opus-4-7', 'claude-opus-4-8', 'claude-sonnet-5', 'claude-sonnet-4-6', 'claude-sonnet-4-5', 'claude-haiku-4-5',
+            'qwen3.6-35b-a3b', 'qwen3.5-397b-a17b', 'qwen36-35b-a3b', 'qwen35-397b-a17b',
+            'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4-mini', 'gpt-4.1-mini', 'gpt-4o-mini'
         ];
         const isCustomModel = !preconfiguredHipaaList.includes(val);
         if (isCustomModel && chkCustomLlmBaa && !chkCustomLlmBaa.checked) {
@@ -2771,10 +2771,10 @@ function updateCustomLlmBaaVisibility(isHipaaModeActive) {
 
     const val = selectEl.value;
     const preconfiguredHipaaList = [
-        'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.0-flash-lite',
-        'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro',
-        'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-sonnet-4-5', 'claude-sonnet-4', 'claude-haiku-4-5',
-        'qwen36-35b-a3b', 'qwen35-397b-a17b'
+        'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash',
+        'claude-opus-4-7', 'claude-opus-4-8', 'claude-sonnet-5', 'claude-sonnet-4-6', 'claude-sonnet-4-5', 'claude-haiku-4-5',
+        'qwen3.6-35b-a3b', 'qwen3.5-397b-a17b', 'qwen36-35b-a3b', 'qwen35-397b-a17b',
+        'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4-mini', 'gpt-4.1-mini', 'gpt-4o-mini'
     ];
 
     const isCustomModel = !preconfiguredHipaaList.includes(val);
@@ -2921,9 +2921,6 @@ if (btnRunMonidPreset) {
     btnRunMonidPreset.addEventListener('click', async () => {
         const presetKey = document.getElementById('extMonidPreset').value;
         const inputField = document.getElementById('extManualInject');
-        const queryText = inputField.value.trim() || prompt(target.promptMsg || "Enter input query:", "WebRTC AI Agents");
-
-        if (!queryText) return;
 
         const presetMap = {
             exa_search: { provider: "exa", endpoint: "/search", promptMsg: "Enter search query for Exa AI:" },
@@ -2942,6 +2939,10 @@ if (btnRunMonidPreset) {
 
         const target = presetMap[presetKey];
         if (!target) return;
+
+        const queryText = inputField.value.trim() || prompt(target.promptMsg || "Enter input query:", "WebRTC AI Agents");
+
+        if (!queryText) return;
 
         appendTranscript('System', `⚡ Executing verified Monid preset: ${target.provider} -> ${target.endpoint} for query: "${queryText}"`);
 
