@@ -920,7 +920,7 @@ btnConnect.addEventListener('click', async () => {
     }
 
     try {
-        const llmVal = extLlmSelect.value || 'gemini-2.5-flash';
+        const llmVal = extLlmSelect.value || 'claude-sonnet-5';
         const memoryVal = await getSavedKey('agentMemory') || '';
         const req = await fetch(`${SERVER_URL}/api/get-signed-url?agent_id=nexus_omni&elevenlabs_key=${elKey}&environment=chrome_extension&llm=${encodeURIComponent(llmVal)}&user_memory=${encodeURIComponent(memoryVal)}`);
         const tokenData = await req.json();
