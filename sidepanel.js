@@ -922,7 +922,22 @@ btnConnect.addEventListener('click', async () => {
     try {
         const llmVal = extLlmSelect.value || 'claude-sonnet-5';
         const memoryVal = await getSavedKey('agentMemory') || '';
-        const req = await fetch(`${SERVER_URL}/api/get-signed-url?agent_id=nexus_omni&elevenlabs_key=${elKey}&environment=chrome_extension&llm=${encodeURIComponent(llmVal)}&user_memory=${encodeURIComponent(memoryVal)}`);
+        const req = await fetch(`${SERVER_URL}/api/get-signed-url`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                agent_id: 'nexus_omni',
+                elevenlabs_key: elKey,
+                environment: 'chrome_extension',
+                llm: llmVal,
+                user_memory: memoryVal
+            })
+        });
+
+        if (!req.ok) {
+            const errText = await req.text();
+            throw new Error(`get-signed-url ${req.status}: ${errText.slice(0, 300)}`);
+        }
         const tokenData = await req.json();
 
         if (tokenData.error) {
