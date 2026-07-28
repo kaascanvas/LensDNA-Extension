@@ -182,7 +182,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (opt) target.value = opt.value;
                 else target.value = textToType;
             } else if (target.isContentEditable) {
-                // Draft.js / React ContentEditable Sync for X (Twitter) & Rich Text Editors
+                // Draft.js / Lexical ContentEditable Sync for X (Twitter)
                 target.focus();
                 
                 // Position cursor at the end of the editor
@@ -195,18 +195,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     sel.addRange(range);
                 } catch(e) {}
 
-                // ExecCommand simulates a physical human typing action (required for Draft.js)
+                // ExecCommand inserts the text AND updates Draft.js state natively in one action
                 const success = document.execCommand('insertText', false, textToType);
                 
-                // Fallback ONLY if the editor is completely empty and execCommand failed
+                // Fallback ONLY if execCommand failed completely
                 if (!success && !target.textContent.trim()) {
                     target.textContent = textToType;
                 }
 
-                // Force Draft.js and React state engines to register the input and clear background placeholders
-                target.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: textToType }));
-                target.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: textToType }));
-                target.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, cancelable: true, data: textToType }));
+                // Dispatch a clean event WITHOUT data payload so Draft.js/Lexical doesn't insert the string again
+                target.dispatchEvent(new Event('input', { bubbles: true }));
             } else {
                 // Native Value Setter for standard React/Vue inputs
                 const proto = target.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
