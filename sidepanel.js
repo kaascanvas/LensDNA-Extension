@@ -870,6 +870,7 @@ btnConnect.addEventListener('click', async () => {
                         action: 'TYPE_TEXT', 
                         data: {
                             selector: data.args.selector || null,
+                            field_hint: data.args.field_hint || data.args.label || null,
                             text: data.args.text
                         } 
                     });
@@ -1084,6 +1085,7 @@ btnConnect.addEventListener('click', async () => {
                             action: 'TYPE_TEXT', 
                             data: {
                                 selector: params.selector || null,
+                                field_hint: params.field_hint || params.label || null,
                                 text: params.text
                             } 
                         });
@@ -2938,6 +2940,10 @@ if (btnRunMonidPreset) {
         const inputField = document.getElementById('extManualInject');
 
         const presetMap = {
+            octen_broad_search: { provider: "octen", endpoint: "/broad-search", promptMsg: "Enter topic for Octen Broad Search:" },
+            octen_extract: { provider: "octen", endpoint: "/extract", promptMsg: "Enter URL to extract clean text:" },
+            apollo_lead_gen: { provider: "apollo", endpoint: "/mixed_people/search", promptMsg: "Enter target company domain or lead role:" },
+            review_scraper: { provider: "apify", endpoint: "/compass/google-maps-reviews-scraper", promptMsg: "Enter business name or Google Maps URL:" },
             exa_search: { provider: "exa", endpoint: "/search", promptMsg: "Enter search query for Exa AI:" },
             apify_tweet: { provider: "apify", endpoint: "/apidojo/tweet-scraper", promptMsg: "Enter search keyword or hashtag for X/Twitter:" },
             youtube_transcript: { provider: "apify", endpoint: "/starvibe/youtube-video-transcript", promptMsg: "Enter YouTube video URL:" },

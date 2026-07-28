@@ -31,7 +31,6 @@
             --label-color: #222222;
         }
 
-        /* --- RESET & BASE --- */
         * { box-sizing: border-box; }
         body { 
             background: var(--bg); color: var(--text); 
@@ -42,7 +41,6 @@
         }
         .mono { font-family: 'Share Tech Mono', monospace; }
 
-        /* --- APP SHELL --- */
         .app-header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px 15px; background: var(--panel);
@@ -59,12 +57,10 @@
             padding: 15px; position: relative;
             display: flex; flex-direction: column;
         }
-        /* Sleek scrollbar */
         .app-workspace::-webkit-scrollbar { width: 4px; }
         .app-workspace::-webkit-scrollbar-track { background: transparent; }
         .app-workspace::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
 
-        /* --- COMMAND HUB (COCKPIT) --- */
         .command-hub {
             flex-shrink: 0; background: var(--panel);
             border-top: 1px solid var(--border);
@@ -73,7 +69,6 @@
             z-index: 20;
         }
 
-        /* --- BUTTONS & CONTROLS --- */
         .btn { 
             background: var(--panel); color: var(--text); 
             border: 1px solid var(--border); padding: 10px 12px; 
@@ -101,7 +96,6 @@
         .btn-cyan { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
         .btn-purple { border-color: var(--purple); color: var(--purple); background: var(--purple-dim); }
 
-        /* --- INPUTS --- */
         .input-modern {
             width: 100%; background: var(--bg) !important;
             border: 1px solid var(--border) !important; color: var(--text) !important;
@@ -111,7 +105,6 @@
         .input-modern:focus { border-color: var(--cyan) !important; box-shadow: 0 0 10px var(--cyan-dim); }
         textarea.input-modern { resize: none; height: 60px; }
 
-        /* --- SETTINGS DRAWER --- */
         .column-left {
             position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
             background: var(--bg); z-index: 9999;
@@ -138,7 +131,6 @@
             padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;
         }
 
-        /* --- CARDS & PROMOS --- */
         .form-group { margin-bottom: 15px; }
         label, .form-group label { display: block; font-size: 0.65rem; font-weight: 500; color: var(--label-color); margin-bottom: 6px; text-transform: uppercase; opacity: 1; }
         
@@ -156,7 +148,6 @@
         .promo-link:hover { border-color: var(--text); }
         .promo-link.premium { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
 
-        /* --- DJ MIXER --- */
         #dj-matrix-panel { 
             background: var(--panel); border: 1px solid var(--purple); 
             border-radius: 10px; padding: 10px; margin-bottom: 15px; 
@@ -172,71 +163,28 @@
             border-radius: 8px; padding: 8px; transition: 0.3s; 
         }
 
-        /* --- TACTILE VERTICAL EQUALIZERS --- */
         .fader-vertical {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            flex-shrink: 0;
-            gap: 2px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 20px; flex-shrink: 0; gap: 2px;
         }
-        .fader-vertical span {
-            font-size: 0.5rem;
-            color: var(--text-mut);
-            font-weight: bold;
-            text-transform: uppercase;
-        }
+        .fader-vertical span { font-size: 0.5rem; color: var(--text-mut); font-weight: bold; text-transform: uppercase; }
         .fader-vertical input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            writing-mode: vertical-lr;
-            direction: rtl;
-            height: 50px;
-            width: 8px;
-            cursor: pointer;
-            background: var(--border) !important;
-            border: none !important;
-            border-radius: 3px;
-            outline: none;
-            padding: 0;
-            margin: 4px 0 !important;
+            -webkit-appearance: none; appearance: none; writing-mode: vertical-lr; direction: rtl;
+            height: 50px; width: 8px; cursor: pointer; background: var(--border) !important;
+            border: none !important; border-radius: 3px; outline: none; padding: 0; margin: 4px 0 !important;
         }
         .fader-vertical input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #ffffff;
-            border: 1.5px solid var(--cyan);
-            box-shadow: 0 0 10px var(--cyan);
-            cursor: pointer;
-        }
-        .fader-vertical input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
+            -webkit-appearance: none; appearance: none; width: 10px; height: 10px;
+            border-radius: 50%; background: #ffffff; border: 1.5px solid var(--cyan);
+            box-shadow: 0 0 10px var(--cyan); cursor: pointer;
         }
 
-        /* --- GLOBAL RANGE MODS --- */
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            outline: none;
-        }
-        
-        /* --- TRANSCRIPT --- */
         #transcript { overflow-wrap: anywhere; word-break: break-word; font-size: 0.85rem; padding-bottom: 20px;}
-        
         .clear-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-mut); cursor: pointer; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
-    <!-- ========================================== -->
-    <!-- 1. MAIN APP WORKSPACE & COCKPIT            -->
-    <!-- ========================================== -->
-    
     <header class="app-header">
         <h1 class="brand-title mono">NEXUS PRIME</h1>
         <div style="display: flex; gap: 8px;">
@@ -245,11 +193,10 @@
     </header>
 
     <main class="app-workspace">
-        
         <!-- TRANSCRIPT CHAT -->
         <div id="transcript"></div>
         
-        <!-- DJ MIXER (Moved below chat flow) -->
+        <!-- DJ MIXER PANEL -->
         <div id="dj-matrix-panel" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="color:var(--purple); font-weight:bold; font-size:0.85rem; letter-spacing:1px;" class="mono">🎛️ 8-CHANNEL MATRIX</span>
@@ -273,7 +220,7 @@
             </div>
         </div>
 
-        <!-- SIP DIALER (Moved below chat flow) -->
+        <!-- SIP DIALER PANEL -->
         <div id="dialer-panel" class="promo-box" style="display: none; border-color: var(--purple); background: var(--purple-dim); box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span class="promo-title mono" style="color: var(--purple); margin: 0;">📞 Outbound SIP Proxy Dialer</span>
@@ -296,7 +243,7 @@
             <div id="outboundStatusText" style="font-size: 0.65rem; color: var(--text-mut); text-align: center;" class="mono">Standard telephone proxy standing by.</div>
         </div>
 
-        <!-- Live Hardware Sensor Feed (Moved below chat flow) -->
+        <!-- OPTIC VISION FEED -->
         <div id="nexusVisionContainer" style="width: 100%; height: 200px; min-height: 150px; max-height: 85vh; resize: vertical; overflow: hidden; background: #000; border: 1px dashed var(--border); border-radius: 8px; display: none; position: relative; margin-bottom: 15px;">
             <video id="nexusVisionFeed" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
             <div style="position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; font-size: 0.55rem; color: var(--neon); font-weight: bold;" class="mono">OPTIC TRANSMITTER ACTIVE</div>
@@ -305,17 +252,12 @@
             <button id="btnCloseVision" class="mono" style="position: absolute; top: 6px; right: 6px; background: rgba(255, 59, 48, 0.8); color: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 0.55rem; cursor: pointer; font-weight: bold; z-index: 50;">✕ CLOSE</button>
         </div>
 
-        <!-- Music Graph Frequency Visualizer -->
         <canvas id="musicGraph" width="280" height="50" style="background: rgba(0,0,0,0.15); border: 1px solid var(--border); border-radius: 8px; width: 100%; height: 55px; margin-bottom: 15px; display: none;"></canvas>
-        
-        <!-- Hidden Voice Orb Anchor to prevent JS crashes -->
         <div id="voiceOrb" style="display: none;"></div>
-
     </main>
 
-    <!-- COMMAND HUB (BOTTOM) -->
+    <!-- COMMAND HUB FOOTER -->
     <footer class="command-hub">
-        
         <div class="hub-top-row">
             <button id="btnConnect" class="btn-uplink mono" style="flex: 2; width: auto;">INITIATE UPLINK</button>
             <button id="btnExtractDom" class="btn mono btn-cyan" style="flex: 1; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px;" title="Extract Page DOM">📄 DOM</button>
@@ -339,13 +281,8 @@
         </div>
     </footer>
 
-
-    <!-- ========================================== -->
-    <!-- 2. SETTINGS DRAWER (SLIDES UP OVER APP)    -->
-    <!-- ========================================== -->
-    
+    <!-- SETTINGS DRAWER -->
     <div class="column-left collapsed">
-        
         <header class="drawer-header">
             <h2 class="brand-title mono" style="color:var(--text); text-shadow:none;">⚙️ CONFIGURATION</h2>
             <div style="display: flex; gap: 8px;">
@@ -355,7 +292,6 @@
         </header>
         
         <div class="drawer-content">
-            
             <div style="text-align: center; margin-bottom: 20px;">
                 <a href="https://try.elevenlabs.io/lensdj" target="_blank" rel="noopener noreferrer">
                     <img id="elevenBanner" src="https://eleven-public-cdn.elevenlabs.io/payloadcms/cy7rxce8uki-IIElevenLabsGrants%201.webp" alt="ElevenLabs Grants" style="width: 100%; max-width: 180px; border-radius: 4px;">
@@ -405,12 +341,16 @@
                 </div>
             </div>
 
-            <!-- UNIVERSAL MONID TOOL SUITE (SINGLE-BALANCE AGENT EXECUTION) -->
+            <!-- MONID PRESETS -->
             <div class="promo-box" style="border-color: #f59e0b; background: rgba(245, 158, 11, 0.05);">
                 <div class="promo-title mono" style="color: #f59e0b;">🌐 MONID UNIVERSAL AGENT TOOLS</div>
                 <div class="form-group" style="margin-bottom: 8px;">
                     <label style="color: #f59e0b;">Select Active Tool Action</label>
                     <select id="extMonidPreset" class="input-modern mono" style="border-color: #f59e0b !important; cursor: pointer; font-size: 0.72rem;">
+                        <option value="octen_broad_search">⚡ Octen: Broad Agentic Multi-Angle Search</option>
+                        <option value="octen_extract">📄 Octen: Clean Markdown URL Extract</option>
+                        <option value="apollo_lead_gen">🎯 Apollo: B2B Verified Lead Prospector ($0.05)</option>
+                        <option value="review_scraper">⭐ Birdeye Killer: Google & FB Review Scraper ($0.0006)</option>
                         <option value="exa_search">🔍 Exa: AI Neural Web Research</option>
                         <option value="apify_tweet">🐦 Apify: X / Twitter Post Scraper</option>
                         <option value="youtube_transcript">🎬 YouTube: Video Transcript Extractor</option>
@@ -491,15 +431,13 @@
                 </select>
             </div>
 
-            <!-- HIPAA / Zero Retention Subsection -->
+            <!-- HIPAA / ZERO RETENTION SUBSECTION -->
             <div class="promo-box" id="hipaaSubsection" style="border-color: var(--alert); background: rgba(255, 59, 48, 0.03); margin-top: 15px;">
                 <div class="promo-title mono" style="color: var(--alert); margin-bottom: 8px;">🛡️ HIPAA / Zero Retention</div>
-                
                 <div style="font-size: 0.65rem; color: var(--text-mut); line-height: 1.4; margin-bottom: 12px;" class="mono">
                     This platform is <strong style="color: var(--text);">HIPAA-eligible when used with an Enterprise plan, signed BAA, and Zero Retention Mode enabled.</strong>
                 </div>
 
-                <!-- Status Indicators & Gated Checkboxes -->
                 <div class="form-group" style="margin-bottom: 10px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                         <input type="checkbox" id="chkEnterprisePlan" style="accent-color: var(--alert); cursor: pointer;">
@@ -515,43 +453,16 @@
                     </div>
                 </div>
 
-                <!-- Dynamic Status Badge -->
                 <div id="hipaaStatusBadge" class="mono" style="font-size: 0.65rem; padding: 6px; text-align: center; border-radius: 4px; font-weight: bold; background: rgba(255,59,48,0.1); border: 1px solid var(--alert); color: var(--alert); margin-bottom: 12px;">
                     STATUS: NOT YET ELIGIBLE
                 </div>
 
-                <!-- Local Storage Blocking Warning -->
                 <div id="hipaaActiveWarning" style="display: none; font-size: 0.6rem; color: var(--alert); line-height: 1.3; margin-bottom: 12px; padding: 8px; background: rgba(255, 59, 48, 0.08); border-radius: 4px;" class="mono">
                     ⚠️ <strong>Local Retention Suspended:</strong> Transcripts, conversation logs, and memory extractions will not be saved to local storage, Chrome extension memory, or cache.
                 </div>
-
-                <!-- Custom Integration Caveat -->
-                <div style="font-size: 0.6rem; color: var(--text-mut); line-height: 1.3; margin-bottom: 12px;" class="mono">
-                    ℹ️ ElevenLabs Zero Retention Mode limits retention on the ElevenLabs side only. Any custom backend, proxy, database, analytics layer, or custom LLM provider must also be covered by the correct BAA and retention controls if PHI is processed.
-                </div>
-
-                <!-- Custom LLM Provider BAA Gating -->
-                <div id="customLlmAcknowledgeGroup" style="display: none; border-top: 1px dashed var(--border); padding-top: 10px; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: flex-start; gap: 8px;">
-                        <input type="checkbox" id="chkCustomLlmBaa" style="accent-color: var(--alert); cursor: pointer; margin-top: 2px;">
-                        <label for="chkCustomLlmBaa" style="font-size: 0.6rem; color: var(--text-dim); cursor: pointer; margin: 0; text-transform: none; line-height: 1.3;">
-                            I acknowledge that my chosen Custom LLM provider is under a signed BAA and configured for zero retention or equivalent no-retention handling before PHI workflows are allowed.
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Dynamic Preconfigured Models Directory Link -->
-                <a href="https://elevenlabs.io/docs/eleven-agents/legal/hipaa#available-llms" target="_blank" class="promo-link mono" style="font-size: 0.6rem; padding: 8px; border-color: var(--border-light); color: var(--text-mut); margin-bottom: 10px;">
-                    🔗 View HIPAA-Eligible LLMs Directory
-                </a>
-
-                <!-- Compliance Responsibility Disclaimer -->
-                <div style="font-size: 0.55rem; color: var(--text-mut); line-height: 1.3; text-align: center; border-top: 1px solid var(--border); padding-top: 8px;" class="mono">
-                    This client helps configure HIPAA-eligible workflows, but the covered entity or business associate remains responsible for ensuring full compliance with all applicable laws and agreements.
-                </div>
             </div>
 
-            <!-- MEMORY -->
+            <!-- PERSISTENT MEMORY -->
             <div class="promo-box" style="border-color: var(--neon); background: var(--neon-dim);">
                 <div class="promo-title mono" style="color: var(--neon);">🧠 Persistent Memory Layer</div>
                 <textarea id="extMemoryBox" class="input-modern mono" placeholder="No remembered profile facts yet..." style="height: 70px; margin-bottom: 10px;"></textarea>
@@ -566,13 +477,11 @@
                 <div style="display:flex; justify-content:space-between; margin-top:8px; background:var(--bg); padding:8px; border-radius:6px; border:1px solid var(--border);" class="mono"><span>Logic Kernel:</span> <span id="telemetry-llm" style="color:var(--purple); font-weight:bold;">Claude Sonnet 5</span></div>
             </div>
 
-            <!-- PRIVACY & TERMS -->
             <div style="margin-top: 25px; text-align: center; border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 10px;">
                 <a href="https://lensdj.app/privacy.html" target="_blank" rel="noopener noreferrer" class="mono" style="color: var(--text-mut); font-size: 0.7rem; text-decoration: underline; text-transform: uppercase; letter-spacing: 0.5px;">
                     🛡️ Privacy & Terms
                 </a>
             </div>
-            
         </div>
     </div>
 
