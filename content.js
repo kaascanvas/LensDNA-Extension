@@ -182,9 +182,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (opt) target.value = opt.value;
                 else target.value = textToType;
             } else if (target.isContentEditable) {
-                target.innerText = textToType;
+                // Draft.js / React ContentEditable Sync for X (Twitter) & Rich Text Editors
+                target.focus();
+                
+                // Position cursor at the end of the editor
+                try {
+                    const range = document.createRange();
+                    range.selectNodeContents(target);
+                    range.collapse(false);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } catch(e) {}
+
+                // ExecCommand simulates a physical human typing action (required for Draft.js)
+                const success = document.execCommand('insertText', false, textToType);
+                
+                // Fallback ONLY if the editor is completely empty and execCommand failed
+                if (!success && !target.textContent.trim()) {
+                    target.textContent = textToType;
+                }
+
+                // Force Draft.js and React state engines to register the input and clear background placeholders
+                target.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: textToType }));
+                target.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: textToType }));
+                target.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, cancelable: true, data: textToType }));
             } else {
-                // Native Value Setter: bypasses React/Vue property overrides
+                // Native Value Setter for standard React/Vue inputs
                 const proto = target.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
                 const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
                 if (nativeSetter) {
@@ -196,8 +220,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             target.dispatchEvent(new Event('input', { bubbles: true }));
             target.dispatchEvent(new Event('change', { bubbles: true }));
-            target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-            target.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+            target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Text', code: 'Text' }));
+            target.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Text', code: 'Text' }));
 
             target.style.transition = "box-shadow 0.3s, border-color 0.3s";
             target.style.borderColor = "#00e5ff";
@@ -211,7 +235,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    // E. RPA Click Element Tool
+    // E. RPA Click Element Tool (With Native X / Twitter Selector Targeting)
     if (request.action === 'CLICK_ELEMENT') {
         let target = null;
         
@@ -220,8 +244,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         
         if (!target && request.data.text_content) {
-            const elements = Array.from(document.querySelectorAll('button, a, [role="button"], input[type="submit"], .btn'));
-            target = elements.find(el => el.innerText.trim().toLowerCase().includes(request.data.text_content.toLowerCase()));
+            const searchText = request.data.text_content.toLowerCase().trim();
+            // Direct selector match for X (Twitter) Post/Reply buttons
+            if (searchText.includes('reply') || searchText.includes('post') || searchText.includes('tweet')) {
+                target = document.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
+            }
+            if (!target) {
+                const elements = Array.from(document.querySelectorAll('button, a, [role="button"], input[type="submit"], .btn'));
+                target = elements.find(el => el.innerText.trim().toLowerCase().includes(searchText));
+            }
         }
 
         if (target) {

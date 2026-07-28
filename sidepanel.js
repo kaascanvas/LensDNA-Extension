@@ -1078,7 +1078,8 @@ btnConnect.addEventListener('click', async () => {
                     }
                 },
                 type_text_in_active_page: async (params) => {
-                    appendTranscript('System', `Typing into active page: "${params.text}"...`);
+                    const textPayload = params.text || params.value || params.content || '';
+                    appendTranscript('System', `Typing into active page: "${textPayload.slice(0, 40)}..."`);
                     try {
                         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
                         const response = await chrome.tabs.sendMessage(tab.id, { 
@@ -1086,7 +1087,7 @@ btnConnect.addEventListener('click', async () => {
                             data: {
                                 selector: params.selector || null,
                                 field_hint: params.field_hint || params.label || null,
-                                text: params.text
+                                text: textPayload
                             } 
                         });
                         return `Successfully typed text into active browser tab. Page status: ${response ? response.status : 'OK'}`;
