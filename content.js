@@ -149,7 +149,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    // D. Active-Tab Typing Tool with React/Vue Synthetic Setter
+    // D. Active-Tab Typing Tool with React/Vue Synthetic Setter & Draft.js Sync
     if (request.action === 'TYPE_TEXT') {
         const textToType = request.data?.text || '';
         const hint = request.data?.field_hint || request.data?.selector || request.data?.label || '';
@@ -181,11 +181,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 );
                 if (opt) target.value = opt.value;
                 else target.value = textToType;
+
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+                target.dispatchEvent(new Event('change', { bubbles: true }));
             } else if (target.isContentEditable) {
-                // Draft.js / Lexical ContentEditable Sync for X (Twitter)
+                // Draft.js / Lexical Editor for X (Twitter) & Rich Text Editors
                 target.focus();
-                
-                // Position cursor at the end of the editor
+
+                // 1. Position cursor at the end of existing text (or existing @mentions)
                 try {
                     const range = document.createRange();
                     range.selectNodeContents(target);
@@ -195,16 +198,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     sel.addRange(range);
                 } catch(e) {}
 
-                // ExecCommand inserts the text AND updates Draft.js state natively in one action
-                const success = document.execCommand('insertText', false, textToType);
-                
-                // Fallback ONLY if execCommand failed completely
-                if (!success && !target.textContent.trim()) {
-                    target.textContent = textToType;
+                // 2. Try native Clipboard Paste Event (100% clean for Draft.js / Lexical)
+                let inserted = false;
+                try {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.setData('text/plain', textToType);
+                    const pasteEvent = new ClipboardEvent('paste', {
+                        clipboardData: dataTransfer,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    inserted = target.dispatchEvent(pasteEvent);
+                } catch(e) {}
+
+                // 3. Fallback to execCommand if Paste Event wasn't handled
+                if (!inserted || !target.textContent.includes(textToType)) {
+                    document.execCommand('insertText', false, textToType);
                 }
 
-                // Dispatch a clean event WITHOUT data payload so Draft.js/Lexical doesn't insert the string again
-                target.dispatchEvent(new Event('input', { bubbles: true }));
+                // Visual Glow Feedback
+                target.style.transition = "box-shadow 0.3s, border-color 0.3s";
+                target.style.borderColor = "#00e5ff";
+                target.style.boxShadow = "0 0 20px #00e5ff"; 
+                setTimeout(() => target.style.boxShadow = "", 1500);
+
+                sendResponse({ status: "TEXT_TYPED_SUCCESSFULLY", target: target.tagName });
+                return true; // EARLY RETURN: Bypasses extra trailing KeyboardEvents that cause duplicate typing
             } else {
                 // Native Value Setter for standard React/Vue inputs
                 const proto = target.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
@@ -214,12 +233,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 } else {
                     target.value = textToType;
                 }
-            }
 
-            target.dispatchEvent(new Event('input', { bubbles: true }));
-            target.dispatchEvent(new Event('change', { bubbles: true }));
-            target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Text', code: 'Text' }));
-            target.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Text', code: 'Text' }));
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+                target.dispatchEvent(new Event('change', { bubbles: true }));
+            }
 
             target.style.transition = "box-shadow 0.3s, border-color 0.3s";
             target.style.borderColor = "#00e5ff";
