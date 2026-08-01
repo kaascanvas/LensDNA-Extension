@@ -1533,7 +1533,7 @@ btnConnect.addEventListener('click', async () => {
                     return `Opened X advanced search for "${query}". The results tab is now active. Tell me when to snap it (or just say "read the posts") and I will extract the latest offers, grant announcements, and threads.`;
                 },
                 deep_reasoning_query: async (params) => {
-                    appendTranscript('System', 'Running deep reasoning on server...');
+                    appendTranscript('System', 'Running deep reasoning via WebRTC Gateway...');
                     const gKey = extGeminiKeyInput.value.trim();
                     const grokKey = extGrokKeyInput ? extGrokKeyInput.value.trim() : '';
                     
@@ -1543,14 +1543,19 @@ btnConnect.addEventListener('click', async () => {
                     }
 
                     return reasoningBreaker.execute(async () => {
-                        const resp = await fetchWithTimeout(`${SERVER_URL}/api/deep-reasoning`, {
+                        const resp = await fetchWithTimeout(`${SERVER_URL}/api/webrtc-gateway/execute`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ prompt: finalPrompt, gemini_key: gKey, grok_key: grokKey }),
-                            timeout: 60000 // 60-second deep reasoning limit
+                            body: JSON.stringify({
+                                tool_name: 'deep_reasoning',
+                                payload: { prompt: finalPrompt },
+                                gemini_key: gKey,
+                                grok_key: grokKey
+                            }),
+                            timeout: 60000
                         });
                         const data = await resp.json();
-                        if (data.response) return data.response;
+                        if (data.result) return data.result;
                         throw new Error(data.error || 'Empty reasoning response');
                     }, `[Graceful Degradation] Deep reasoning query is temporarily offline or timed out.`);
                 },
@@ -1575,7 +1580,7 @@ btnConnect.addEventListener('click', async () => {
                     return JSON.stringify(await resp.json());
                 },
                 monid_run: async (params = {}) => {
-                    const mKey = extMonidKeyInput ? extMonidKeyInput.value.trim() : '';
+                    const mKey = document.getElementById('extMonidKey')?.value || '';
 
                     let rawInput = params.input ?? params.inputs ?? params.data;
                     let baseInput = {};
@@ -1590,7 +1595,6 @@ btnConnect.addEventListener('click', async () => {
                         baseInput = { ...rawInput };
                     }
 
-                    // Preserve explicit top-level envelopes
                     if (params.body && typeof params.body === 'object') {
                         baseInput.body = { ...(baseInput.body || {}), ...params.body };
                     }
@@ -1613,44 +1617,28 @@ btnConnect.addEventListener('click', async () => {
                         }
                     }
 
-                    const awaitResult = Boolean(
-                        params.await_result === true ||
-                        params.awaitResult === true ||
-                        params.await_result === 'true' ||
-                        params.awaitResult === 'true'
-                    );
-
-                    let workspaceId = params.workspace_id || params.workspaceId || params.x_workspace_id || '';
-                    if (!workspaceId) {
-                        workspaceId = await getSavedKey('extMonidWorkspaceId') || '';
-                    }
-
-                    appendTranscript('System', `⚡ Launching Monid data scraper: ${params.provider} ${params.endpoint} (Await: ${awaitResult})`);
+                    appendTranscript('System', `⚡ WebRTC-to-REST Gateway: Executing Monid [${params.provider}:${params.endpoint}]...`);
 
                     try {
-                        const resp = await fetch(`${SERVER_URL}/api/monid/run`, {
+                        const resp = await fetch(`${SERVER_URL}/api/webrtc-gateway/execute`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                provider: params.provider,
-                                endpoint: params.endpoint,
-                                input: baseInput,
-                                await_result: awaitResult,
-                                workspace_id: workspaceId,
+                                tool_name: 'monid_run',
+                                payload: {
+                                    provider: params.provider,
+                                    endpoint: params.endpoint,
+                                    input: baseInput
+                                },
                                 monid_key: mKey
                             })
                         });
 
                         const result = await resp.json();
-                        const resultStr = JSON.stringify(result);
-                        return resultStr.length > 30000 ? resultStr.slice(0, 30000) + "...[TRUNCATED]" : resultStr;
+                        return result.result || JSON.stringify(result);
                     } catch (err) {
                         console.error("Monid run execution failed:", err);
-                        return JSON.stringify({
-                            error: `Monid execution failed: ${err.message}`,
-                            provider: params.provider,
-                            endpoint: params.endpoint
-                        });
+                        return `Monid execution failed: ${err.message}`;
                     }
                 },
                 monid_poll_run: async (params) => {
