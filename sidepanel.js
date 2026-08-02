@@ -952,6 +952,39 @@ btnConnect.addEventListener('click', async () => {
                 audioConcatProcessor: 'audio-concat-processor.js'
             },
             clientTools: {
+                forge_dossier_pdf: async ({ title, document_url, markdown }) => {
+                    appendTranscript('System', `📄 Compiling 2-3 Page Executive PDF: "${title || 'Dossier'}"...`);
+                    try {
+                        const gKey = extGeminiKeyInput ? extGeminiKeyInput.value.trim() : '';
+                        const resp = await fetch(`${SERVER_URL}/api/forge-dossier-pdf`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                title: title || 'Executive Dossier',
+                                document_url: document_url || location.href,
+                                markdown: markdown || window.lastPastedContext || '',
+                                gemini_key: gKey
+                            })
+                        });
+                        const res = await resp.json();
+                        if (res.ok) {
+                            const downloadUrl = `${SERVER_URL}${res.url}`;
+                            const pdfCard = `
+                                <div style="border: 1px solid var(--cyan); border-radius: 8px; overflow: hidden; margin-top: 10px; background: rgba(0, 229, 255, 0.05); padding: 12px;">
+                                    <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--cyan); margin-bottom: 8px;">📄 EXECUTIVE PDF DOSSIER READY</div>
+                                    <div style="font-size: 0.9rem; font-weight: bold; color: #fff; margin-bottom: 8px;">${res.title || title}</div>
+                                    <a href="${downloadUrl}" target="_blank" class="btn mono btn-cyan" style="display: block; text-align: center; text-decoration: none; font-size: 0.75rem; font-weight: bold;">⬇ DOWNLOAD PDF DOSSIER</a>
+                                </div>
+                            `;
+                            appendTranscript('System', pdfCard, true);
+                            return `PDF Dossier successfully generated and ready for download at ${downloadUrl}. Inform the user their report is ready.`;
+                        } else {
+                            return `Failed to generate PDF: ${res.error}`;
+                        }
+                    } catch (err) {
+                        return `PDF Forge Error: ${err.message}`;
+                    }
+                },
                 hunt_reddit_leads: async (params = {}) => {
                     return await window.executeRedditLeadHunter(params);
                 },
