@@ -1205,8 +1205,10 @@ btnConnect.addEventListener('click', async () => {
                 read_optic_sensor: async () => {
                     appendTranscript('System', '🧠 Initiating Visual Acquisition...');
                     
-                    const gKey = extGeminiKeyInput.value.trim();
-                    const grokKey = extGrokKeyInput ? extGrokKeyInput.value.trim() : '';
+                    const rawGKey = extGeminiKeyInput.value.trim();
+                    const rawGrokKey = extGrokKeyInput ? extGrokKeyInput.value.trim() : '';
+                    const gKey = rawGKey.startsWith("AIza") ? rawGKey : rawGKey;
+                    const grokKey = rawGrokKey.startsWith("xai-") ? rawGrokKey : "";
 
                     if (window.visionActive && visionFeed && visionFeed.srcObject) {
                         appendTranscript('System', 'Snapping live hardware video feed...');
@@ -1234,7 +1236,7 @@ btnConnect.addEventListener('click', async () => {
                                     gemini_key: gKey,
                                     grok_key: grokKey
                                 }),
-                                timeout: 15000 // 15-second visual processing limit
+                                timeout: 20000 // 20-second visual processing limit
                             });
                             const res = await resp.json();
                             if (res.error) throw new Error(res.error);
