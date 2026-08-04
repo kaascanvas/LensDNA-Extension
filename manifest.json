@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "LensDNA Sovereign Agent",
-  "version": "1.0.1",
-  "description": "Omnipresent AI Co-Pilot & WebRTC Audio Engine",
+  "version": "1.0.2",
+  "description": "Omnipresent AI Co-Pilot & WebRTC Audio Engine — Field Operator with meter-true GPS + optic fusion",
   "permissions": [
     "sidePanel",
     "activeTab",
@@ -11,7 +11,8 @@
     "storage",
     "tabCapture",
     "contextMenus",
-    "identity"
+    "identity",
+    "geolocation"
   ],
   "host_permissions": [
     "<all_urls>"
