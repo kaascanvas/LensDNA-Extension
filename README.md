@@ -7,7 +7,7 @@
 
 ## ⚡ The Execution Gap (Solved)
 
-Most AI agents stop at the open web, fenced in by static APIs and proxy gateways. They fail the moment they are confronted with localized legacy infrastructure: 15-year-old insurance claims portals, localized ERP databases, VPN-gated CRMs, or any closed system that demands fluid, human-like interaction.
+Most AI agents stop at the open web, fenced in by static APIs and proxy gateways. They fail the moment they are confronted with localized legacy infrastructure: 15-year-old insurance claims portals, localized ERP databases, VPN-gated CRMs, municipal GIS maps, or any closed system that demands fluid, human-like interaction.
 
 **LensDNA is the physical interface.**  
 As a native Chrome, Brave, and Edge extension, LensDNA runs on the client-side of the host machine. By rendering directly into the active browser viewport, it bypasses security layers that block cloud proxies, analyzing visual layout states, executing human-simulated RPA actions (deterministic typing, clicking, and focusing), and orchestrating multi-channel workflows with full local-context preservation.
@@ -16,7 +16,7 @@ As a native Chrome, Brave, and Edge extension, LensDNA runs on the client-side o
 
 ## 🧠 System Architecture & Topology
 
-The LensDNA engine uses a sovereign client-side keyring mapping three primary processing pipelines: the conversational voice stream, browser DOM automation logic, and advanced live intelligence retrieval via Monid integration.
+The LensDNA engine uses a sovereign client-side keyring mapping four primary processing pipelines: the conversational voice stream, browser DOM automation logic, industrial web unlocking via Bright Data, and advanced live intelligence retrieval via Monid.
 
 ```mermaid
 graph TD
@@ -26,26 +26,31 @@ graph TD
         B --> C[Logic Kernel<br/>Gemini / Claude / Grok]
         B --> D[Speech Engine<br/>ElevenLabs WebRTC / Fish]
         B --> E[Monid Data Recon<br/>1,500+ Tools & APIs]
+        B --> G[Bright Data Unlock<br/>Web Unlocker · GIS · SERP]
     end
 
     C -->|Optic Scan + DOM State| F[Active Viewport]
     C -->|RPA Click / Type / Scroll| F
     E -.->|Live Enrichment & Intel| C
+    G -.->|Anti-Bot Bypass · Parcel · Portals| C
 
     style B fill:#0f172a,stroke:#00e5ff,stroke-width:2px,color:#fff
     style C fill:#0f172a,stroke:#00ff41,stroke-width:2px,color:#fff
     style D fill:#0f172a,stroke:#b000ff,stroke-width:2px,color:#fff
     style E fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style G fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#fff
     style F fill:#1a0505,stroke:#ff3b30,stroke-width:2px,color:#fff
 ```
 
 ### Core Capabilities
 
-* **Active-Tab Optic Scanner** — Parallel computer vision frame analysis matched with live DOM structure extraction and mutation sequencing tracking.
-* **Autonomous Hand-Simulating RPA** — Deterministic automation interface using `execCommand` fallbacks for pasting into strict rich-text editors (LinkedIn, X, enterprise ERPs) with focus-memory tracking.
-* **Sub-400ms WebRTC Voice Flow** — Native audio pipeline using ElevenLabs conversational agents + client-side `AudioWorkletNode` for high-frequency PCM16 processing.
-* **Persistent Memory Layer** — Long-term facts are recorded, compiled, and force-injected back into the runtime context on every session start.
+* **Active-Tab Optic Scanner** — Parallel computer vision frame analysis matched with live DOM structure extraction and mutation sequencing tracking. SNAP results are injected as contextual updates into the live voice session.
+* **Autonomous Hand-Simulating RPA** — Deterministic automation interface using native value setters + `execCommand` / paste fallbacks for React, Vue, Draft.js, LinkedIn, X, and enterprise ERPs, with focus-memory tracking.
+* **Sub-400ms WebRTC Voice Flow** — Native audio pipeline using ElevenLabs conversational agents + client-side `AudioWorkletNode` for high-frequency PCM16 / µ-law processing.
+* **Bright Data Industrial Unlock** — Web Unlocker for anti-bot pages, GIS / parcel / assessor lookups, SERP, and protected portal extraction (competitor stock, carrier FNOL, municipal permit engines).
 * **Unified Data Recon (via Monid)** — On-demand access to 1,500+ scrapers and APIs for lead enrichment, social intel, market data, competitor tracking, and more.
+* **Persistent Memory Layer** — Long-term facts are recorded (`[MEMORY_SAVE: …]`), compiled, and force-injected back into the runtime context on every session start.
+* **Field Operator Mode** — Meter-true device GPS fused with optic + GIS unlock so the agent knows *where* without spending vision budget on location.
 
 ---
 
@@ -115,6 +120,7 @@ git clone https://github.com/kaascanvas/LensDNA-Extension.git
 3. Enter your keys in the **Sovereign Keyring**:
    * **ElevenLabs API Key** — WebRTC conversational loop
    * **Gemini / Grok / Claude Key** — Logic + vision
+   * **Bright Data API Key** — Web Unlocker, GIS parcel unlock, SERP, protected portals
    * **Monid API Key** — Data recon & scraper pipelines
    * **Fish Audio Key** *(optional)*
 4. Click **INITIATE UPLINK**.
@@ -122,6 +128,14 @@ git clone https://github.com/kaascanvas/LensDNA-Extension.git
 ---
 
 ## 📦 Changelog
+
+### v1.1.0 — Client Tools, Optic Loop & Bright Data Surface
+* Formal client-tool aliases aligned with agent tool calls (`type_text_in_active_page`, `click_element_in_active_page`, `read_active_tab_data`, `report_field_position`, `forge_dossier`).
+* Unified postMessage bridge so overlays / embeds share the same DOM hands as the side panel.
+* SNAP optic analysis injected via `sendContextualUpdate` into the live voice turn.
+* Transcript cards auto-link markdown and bare HTTPS URLs.
+* Bright Data documented in architecture (Web Unlocker · GIS · SERP · portal unlock) and keyring setup.
+* Field Operator GPS exposed as a callable tool (`report_field_position`).
 
 ### v1.0.2 — Monid & Data Recon Integration
 * Full Monid.ai keyring integration.
@@ -144,6 +158,7 @@ We build **Custom Automation Cartridges**.
 * 🐦 **X**: [@LensDJing](https://x.com/LensDJing)
 * 🌐 **Website**: [lensdj.app](https://lensdj.app)
 * 🔑 **Monid**: [monid.ai](https://monid.ai)
+* 🔓 **Bright Data**: [brightdata.com](https://brightdata.com)
 
 ---
 
