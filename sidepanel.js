@@ -1,5 +1,17 @@
 import { Conversation } from './elevenlabs-client.js';
 
+/**
+ * LensDNA Sovereign Agent — sidepanel.js v1.1
+ * Upgrades vs 1.0:
+ * - Auto-link URLs / markdown links in transcript cards
+ * - report_field_position client tool (GPS the model can call)
+ * - forge_dossier alias (works with both /api/forge-dossier-pdf and /api/forge-dossier)
+ * - SNAP optic → prefer sendContextualUpdate so vision lands in the same voice turn
+ * - Works with content.js v1.1 postMessage bridge + action aliases
+ * Backend (lensdj.app app.py) does NOT need changes for these client upgrades.
+ */
+
+
 let audioCtx = null;
 let recordingCtx = null; // Store recording context globally
 let nextStartTime = 0;
@@ -382,6 +394,7 @@ const extGeminiKeyInput = document.getElementById('extGeminiKey');
 const extFishKeyInput = document.getElementById('extFishKey');
 const extGrokKeyInput = document.getElementById('extGrokKey');
 const extMonidKeyInput = document.getElementById('extMonidKey');
+const extBrightdataKeyInput = document.getElementById('extBrightdataKey');
 const extVoiceIdInput = document.getElementById('extVoiceId');
 const extLlmSelect = document.getElementById('extLlmSelect');
 
@@ -409,6 +422,20 @@ window.lastPastedContext = "";
 
 const dawBridge = new BroadcastChannel('lensdj_daw_bridge');
 
+function linkifyText(raw) {
+    // Escape HTML, then auto-link markdown [text](url) and bare https URLs
+    let html = String(raw)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener" style="color:#00e5ff;font-weight:700">$1</a>');
+    html = html.replace(/(https?:\/\/[^\s<]+)/g,
+        '<a href="$1" target="_blank" rel="noopener" style="color:#00e5ff;font-weight:700">$1</a>');
+    html = html.replace(/\n/g, '<br>');
+    return html;
+}
+
 function appendTranscript(role, text, isHtml = false) {
     const div = document.createElement('div');
     
@@ -435,7 +462,12 @@ function appendTranscript(role, text, isHtml = false) {
         
         const textSpan = document.createElement('span');
         textSpan.style.cssText = "font-size: 0.85rem; color: var(--text);";
-        textSpan.textContent = text;
+        // Auto-link URLs / markdown links for Agent & System; plain text for User
+        if (role === 'Agent' || role === 'System' || role === 'Optic Sensor') {
+            textSpan.innerHTML = linkifyText(text);
+        } else {
+            textSpan.textContent = text;
+        }
         
         div.innerHTML = `
             <button class="close-card-btn" style="position:relative; float:right; top:0; right:0; margin-left:8px; background:transparent; border:none; color:var(--text-mut); font-size:1.2rem; padding:0; height:auto; width:auto; box-shadow:none;" title="Dismiss Message">×</button>
@@ -485,6 +517,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedFish = await getSavedKey('extFishKey');
     const savedGrok = await getSavedKey('extGrokKey');
     const savedMonid = await getSavedKey('extMonidKey');
+    const savedBrightdata = await getSavedKey('extBrightdataKey');
     const savedVoice = await getSavedKey('extVoiceId');
     const savedLlm = await getSavedKey('extLlmSelect');
     const savedMemory = await getSavedKey('agentMemory');
@@ -496,6 +529,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (savedFish) extFishKeyInput.value = savedFish;
     if (savedGrok && extGrokKeyInput) extGrokKeyInput.value = savedGrok;
     if (savedMonid && extMonidKeyInput) extMonidKeyInput.value = savedMonid;
+    if (savedBrightdata && extBrightdataKeyInput) extBrightdataKeyInput.value = savedBrightdata;
     if (savedVoice) extVoiceIdInput.value = savedVoice;
     if (savedLlm) {
         extLlmSelect.value = savedLlm;
@@ -579,6 +613,16 @@ if (extMonidKeyInput) {
         saveKey('extMonidKey', val);
         if (socket && socket.connected) {
             socket.emit('update_keyring', { monid_key: val });
+        }
+    });
+}
+
+if (extBrightdataKeyInput) {
+    extBrightdataKeyInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        saveKey('extBrightdataKey', val);
+        if (socket && socket.connected) {
+            socket.emit('update_keyring', { brightdata_key: val });
         }
     });
 }
@@ -802,6 +846,11 @@ btnConnect.addEventListener('click', async () => {
         });
 
         socket.on('message', (data) => {
+            if (data.type === 'spoken_audio' && data.audio_url) {
+                const audio = new Audio(`${SERVER_URL}${data.audio_url}`);
+                audio.play().catch(e => console.warn("Spoken audio play blocked:", e));
+                return;
+            }
             if (data.type === 'sys-alert') appendTranscript('System', data.text);
             if (data.type === 'response.done' || data.serverContent?.turnComplete || data.type === 'response.complete') {
                 currentAgentLiveMessageEl = null;
@@ -915,7 +964,22 @@ btnConnect.addEventListener('click', async () => {
                 } catch (e) {}
             }, 1200);
         } else {
-            appendTranscript('System', 'Sovereign Uplink established using local Keyring (Gemini Core). Conversational audio stream decoupled; real-time text + tool orchestration is active.');
+            // Native Gemini Live audio path (no ElevenLabs key required)
+            appendTranscript('System', 'Sovereign Uplink established using local Keyring (Gemini Live). Native audio stream active — speak or type to begin.');
+            startMicRecording();
+
+            setTimeout(async () => {
+                try {
+                    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    if (tab && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+                        const ctxMsg = `[SYSTEM MEMORY] User is currently viewing: "${tab.title || 'Untitled'}" (${tab.url}). Focus on this page. Use DOM tools and vision when helpful.`;
+                        window.lastPastedContext = ctxMsg;
+                        if (socket && socket.connected) {
+                            socket.emit('user_message', { text: ctxMsg });
+                        }
+                    }
+                } catch (e) {}
+            }, 1200);
         }
         return;
     }
@@ -1161,6 +1225,81 @@ btnConnect.addEventListener('click', async () => {
                         return `Successfully scrolled the page. Status: ${response ? response.status : 'OK'}`;
                     } catch (err) {
                         return `Failed to scroll page: ${err.message}`;
+                    }
+                },
+                // --- GPS / Field Operator tool (model can call this explicitly) ---
+                report_field_position: async () => {
+                    appendTranscript('System', '📍 Reporting field GPS position...');
+                    return new Promise((resolve) => {
+                        if (!navigator.geolocation) {
+                            resolve('GPS not available in this browser context.');
+                            return;
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                const { latitude, longitude, accuracy } = pos.coords;
+                                window.__lensdnaGps = { lat: latitude, lng: longitude, accuracy };
+                                const badge = document.getElementById('gpsHeaderBadge');
+                                if (badge) {
+                                    badge.style.display = 'inline-block';
+                                    badge.textContent = `📍 ${latitude.toFixed(5)}, ${longitude.toFixed(5)} ±${Math.round(accuracy)}m`;
+                                }
+                                const s = `[POSITION] ${latitude.toFixed(6)}° ${longitude.toFixed(6)}° ±${Number(accuracy || 0).toFixed(1)} m`;
+                                appendTranscript('System', s);
+                                resolve(s);
+                            },
+                            (err) => resolve(`GPS error: ${err.message}`),
+                            { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 }
+                        );
+                    });
+                },
+                // Alias: many agents call forge_dossier (not forge_dossier_pdf)
+                forge_dossier: async (params) => {
+                    // Prefer existing PDF tool if present in this clientTools map
+                    if (typeof arguments.callee !== 'undefined') { /* no-op keep eslint quiet */ }
+                    try {
+                        const gKey = extGeminiKeyInput ? extGeminiKeyInput.value.trim() : '';
+                        const title = (params && params.title) || 'Executive Dossier';
+                        const markdown = (params && params.markdown) || window.lastPastedContext || '';
+                        appendTranscript('System', `📄 Forging dossier: "${title}"...`);
+                        const resp = await fetch(`${SERVER_URL}/api/forge-dossier-pdf`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                title,
+                                document_url: (params && params.document_url) || '',
+                                markdown,
+                                gemini_key: gKey
+                            })
+                        });
+                        const res = await resp.json();
+                        if (res.ok) {
+                            const downloadUrl = `${SERVER_URL}${res.url || res.download_url || ''}`;
+                            const pdfCard = `
+                                <div style="border: 1px solid var(--cyan); border-radius: 8px; overflow: hidden; margin-top: 10px; background: rgba(0, 229, 255, 0.05); padding: 12px;">
+                                    <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--cyan); margin-bottom: 8px;">📄 DOSSIER READY</div>
+                                    <div style="font-size: 0.9rem; font-weight: bold; color: #fff; margin-bottom: 8px;">${res.title || title}</div>
+                                    <a href="${downloadUrl}" target="_blank" class="btn mono btn-cyan" style="display: block; text-align: center; text-decoration: none; font-size: 0.75rem; font-weight: bold;">⬇ DOWNLOAD DOSSIER</a>
+                                </div>`;
+                            appendTranscript('System', pdfCard, true);
+                            return `Dossier forged. Download: ${downloadUrl}. Tell the user to click the download link.`;
+                        }
+                        // Fallback path used by LastMile-style backends
+                        const resp2 = await fetch(`${SERVER_URL}/api/forge-dossier`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title, markdown })
+                        });
+                        const res2 = await resp2.json();
+                        if (res2.ok && (res2.download_url || res2.url)) {
+                            const u = res2.download_url || res2.url;
+                            const full = u.startsWith('http') ? u : `${SERVER_URL}${u}`;
+                            appendTranscript('System', `Dossier ready: <a href="${full}" target="_blank" style="color:#00e5ff;font-weight:bold">Download</a>`, true);
+                            return `Dossier forged at ${full}`;
+                        }
+                        return `Forge failed: ${res.error || res2.error || 'unknown'}`;
+                    } catch (err) {
+                        return `Forge error: ${err.message}`;
                     }
                 },
                 update_intake_form: async (params) => {
@@ -1853,7 +1992,7 @@ if (btnExtractDom) {
 }
 
 btnSnap.addEventListener('click', async () => {
-    appendTranscript('System', 'Snapping active tab...');
+    appendTranscript('System', '📸 Snapping active tab / optic frame...');
     try {
         const b64Image = await captureActiveTabBase64();
         const gKey = extGeminiKeyInput.value.trim();
@@ -1864,19 +2003,30 @@ btnSnap.addEventListener('click', async () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 image: b64Image, 
-                prompt: "What is on this screen?", 
+                prompt: "Analyze this browser/screen frame for agentic context: readable text, UI elements, forms, prices, addresses, product data, or research evidence. Be specific and structured. Prefer facts visible in the image over guesses.", 
                 gemini_key: gKey,
                 grok_key: grokKey
             })
         });
         const res = await resp.json();
         if (res.error) throw new Error(res.error);
+        const analysis = res.text || res.analysis || 'No analysis returned';
         
-        appendTranscript('Optic Sensor', res.text);
+        appendTranscript('Optic Sensor', analysis);
         
+        // Prefer contextual update so the voice agent "sees" without treating it as a user utterance
         if (audioConversation) {
-            if (typeof audioConversation.sendUserMessage === 'function') {
-                audioConversation.sendUserMessage(`[OPTIC SENSOR ALERT: The user just snapped their screen. Here is what is on it: ${res.text}. Use this context to help them.]`);
+            const payload = `[OPTIC SCAN RESULT]\n${String(analysis).slice(0, 1500)}`;
+            try {
+                if (typeof audioConversation.sendContextualUpdate === 'function') {
+                    await audioConversation.sendContextualUpdate(payload);
+                } else if (typeof audioConversation.sendUserMessage === 'function') {
+                    await audioConversation.sendUserMessage(`[OPTIC SENSOR ALERT: ${payload}]`);
+                } else if (typeof audioConversation.sendText === 'function') {
+                    await audioConversation.sendText(`[OPTIC SENSOR ALERT: ${payload}]`);
+                }
+            } catch (e) {
+                console.warn('Optic contextual update failed', e);
             }
         }
     } catch (err) {
@@ -2979,7 +3129,10 @@ if (btnRunMonidPreset) {
             bytedance_video: { provider: "bytedance", endpoint: "/v1/video/seedance-2.0-mini", promptMsg: "Enter video generation prompt:" },
             semrush_domain: { provider: "semrush", endpoint: "/domain_ranks", promptMsg: "Enter target domain (e.g. example.com):" },
             pdl_company: { provider: "peopledatalabs", endpoint: "/v5/company/enrich", promptMsg: "Enter company domain (e.g. stripe.com):" },
-            apify_amazon: { provider: "apify", endpoint: "/trgar/amazon-search-scraper", promptMsg: "Enter Amazon product keyword:" }
+            apify_amazon: { provider: "apify", endpoint: "/trgar/amazon-search-scraper", promptMsg: "Enter Amazon product keyword:" },
+            brightdata_gis_lookup: { provider: "brightdata", endpoint: "/gis-lookup", promptMsg: "Enter GPS coordinates or address (e.g. 46.947973, 7.447447):", isBrightData: true },
+            brightdata_web_unlocker: { provider: "brightdata", endpoint: "/run", promptMsg: "Enter protected URL to unlock:", isBrightData: true, useUrl: true },
+            brightdata_serp: { provider: "brightdata", endpoint: "/run", promptMsg: "Enter SERP search query:", isBrightData: true }
         };
 
         const target = presetMap[presetKey];
@@ -2988,6 +3141,34 @@ if (btnRunMonidPreset) {
         const queryText = inputField.value.trim() || prompt(target.promptMsg || "Enter input query:", "WebRTC AI Agents");
 
         if (!queryText) return;
+
+        if (target.isBrightData) {
+            appendTranscript('System', `🔓 Executing Bright Data preset: ${presetKey} for: "${queryText}"`);
+            try {
+                const bdKey = document.getElementById('extBrightdataKey')?.value || '';
+                let endpoint = `${SERVER_URL}/api/brightdata/run`;
+                let body = { brightdata_key: bdKey };
+                if (presetKey === 'brightdata_gis_lookup') {
+                    endpoint = `${SERVER_URL}/api/brightdata/gis-lookup`;
+                    body.query = queryText;
+                } else if (target.useUrl || queryText.startsWith('http')) {
+                    body.url = queryText;
+                    body.zone = 'web_unlocker';
+                } else {
+                    body.query = queryText;
+                }
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const result = await resp.json();
+                appendTranscript('System', `✅ Bright Data Result:\n${JSON.stringify(result, null, 2).slice(0, 3000)}`);
+            } catch (err) {
+                appendTranscript('Error', `Bright Data execution failed: ${err.message}`);
+            }
+            return;
+        }
 
         appendTranscript('System', `⚡ Executing verified Monid preset: ${target.provider} -> ${target.endpoint} for query: "${queryText}"`);
 
