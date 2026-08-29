@@ -24,20 +24,21 @@ Same seat as the human. Not a second meeting bot. Not a cloud browser farm.
 
 ```mermaid
 graph TD
-    A[Human Operator] <-->|Voice + video seat| B[LensDNA Desktop Agent<br/>Nexus Prime]
+    A[Human Operator] <-->|Voice and video seat| B[LensDNA Desktop Agent]
+    B --- N[Nexus Prime]
 
-    subgraph Sovereign Keyring — BYOK on the desk
-        B --> C[Logic Kernel<br/>Gemini / Claude / Grok]
-        B --> D[Speech Engine<br/>ElevenLabs WebRTC / Fish]
-        B --> E[Monid Data Recon<br/>1,500+ Tools & APIs]
-        B --> G[Bright Data Unlock<br/>Web Unlocker · GIS · SERP]
+    subgraph KEYRING [Sovereign Keyring BYOK]
+        B --> C[Logic Kernel]
+        B --> D[Speech Engine]
+        B --> E[Monid Data Recon]
+        B --> G[Bright Data Unlock]
     end
 
-    C -->|Optic + DOM| F[Live viewport]
-    C -->|RPA Click / Type / Scroll| F
-    B -->|🎧 Dual audio| H[Google Meet — your tile]
+    C -->|Optic and DOM| F[Live viewport]
+    C -->|RPA click type scroll| F
+    B -->|Dual audio| H[Google Meet your tile]
     E -.->|Live enrichment| C
-    G -.->|Anti-bot · parcel · portals| C
+    G -.->|Unlock GIS SERP| C
 
     style B fill:#0f172a,stroke:#00e5ff,stroke-width:2px,color:#fff
     style H fill:#1a0505,stroke:#f59e0b,stroke-width:2px,color:#fff
@@ -106,10 +107,10 @@ Clinical desks need a hard gate, not a promise.
 
 ```mermaid
 flowchart LR
-    A[Intake desk<br/>PHI] --> B{ZRM + signed BAA<br/>+ Enterprise}
+    A[Intake desk PHI] --> B{ZRM and signed BAA}
 
-    B -->|On| C[No-retention LLM + voice endpoints]
-    B -->|On| D[Local persistence BLOCKED]
+    B -->|On| C[No-retention LLM and voice]
+    B -->|On| D[Local persistence blocked]
     B -->|Off| E[Standard local cache]
 
     style B fill:#1a0505,stroke:#ff3b30,stroke-width:2px,color:#fff
