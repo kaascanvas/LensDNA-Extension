@@ -1,167 +1,191 @@
-# LensDNA Sovereign Agent
+# LensDNA — Desktop Agent
 
-**Open-Source Robotic Infrastructure for Vertical AI Co-Pilots.**  
-*Bridging the gap between frontier models and closed execution environments. LensDNA injects Eyes (Computer Vision & DOM extraction), Hands (Deterministic RPA), Voice (Sub-400ms Latency Audio Streams), and Multi-API Data Recon directly into the active browser viewport.*
+**Open-source robotic infrastructure for vertical AI co-pilots.**  
+Nexus Prime is a **desktop agent** that sits on the operator’s machine: eyes on the live viewport, hands on the page, voice on the same seat as the human.
 
----
+This repository is the Chromium sidecar for that agent (Chrome / Brave / Edge, loaded unpacked). It is **not** a Chrome Web Store product and is not distributed as a public “browser extension.” Store review treats this capability set as hostile. We treat it as an endpoint agent the operator installed on purpose.
 
-## ⚡ The Execution Gap (Solved)
-
-Most AI agents stop at the open web, fenced in by static APIs and proxy gateways. They fail the moment they are confronted with localized legacy infrastructure: 15-year-old insurance claims portals, localized ERP databases, VPN-gated CRMs, municipal GIS maps, or any closed system that demands fluid, human-like interaction.
-
-**LensDNA is the physical interface.**  
-As a native Chrome, Brave, and Edge extension, LensDNA runs on the client-side of the host machine. By rendering directly into the active browser viewport, it bypasses security layers that block cloud proxies, analyzing visual layout states, executing human-simulated RPA actions (deterministic typing, clicking, and focusing), and orchestrating multi-channel workflows with full local-context preservation.
+> Repo path stays `LensDNA-Extension` because Chromium is the current runtime. The product is the agent.
 
 ---
 
-## 🧠 System Architecture & Topology
+## Why “desktop agent”
 
-The LensDNA engine uses a sovereign client-side keyring mapping four primary processing pipelines: the conversational voice stream, browser DOM automation logic, industrial web unlocking via Bright Data, and advanced live intelligence retrieval via Monid.
+Cloud agents stop at public APIs. They cannot type into a VPN-gated CRM, read a 15-year-old claims portal, sit in *your* Google Meet tile, or keep keys on the desk.
+
+LensDNA runs next to the operator:
+
+* **Eyes** — optic scan + DOM extract of the active tab  
+* **Hands** — deterministic RPA (type / click / scroll) with React / Vue / Draft.js setters  
+* **Voice** — ElevenLabs WebRTC, sub-400ms, plus on-demand Meet dual audio  
+* **Recon** — Monid (1,500+ tools) + Bright Data unlock / GIS / SERP  
+
+Same seat as the human. Not a second meeting bot. Not a cloud browser farm.
 
 ```mermaid
 graph TD
-    A[Human Operator] <-->|Sub-400ms Voice| B[LensDNA Extension<br/>Nexus Prime]
+    A[Human Operator] <-->|Voice + video seat| B[LensDNA Desktop Agent<br/>Nexus Prime]
 
-    subgraph Sovereign Keyring BYOK
+    subgraph Sovereign Keyring — BYOK on the desk
         B --> C[Logic Kernel<br/>Gemini / Claude / Grok]
         B --> D[Speech Engine<br/>ElevenLabs WebRTC / Fish]
         B --> E[Monid Data Recon<br/>1,500+ Tools & APIs]
         B --> G[Bright Data Unlock<br/>Web Unlocker · GIS · SERP]
     end
 
-    C -->|Optic Scan + DOM State| F[Active Viewport]
+    C -->|Optic + DOM| F[Live viewport]
     C -->|RPA Click / Type / Scroll| F
-    E -.->|Live Enrichment & Intel| C
-    G -.->|Anti-Bot Bypass · Parcel · Portals| C
+    B -->|🎧 Dual audio| H[Google Meet — your tile]
+    E -.->|Live enrichment| C
+    G -.->|Anti-bot · parcel · portals| C
 
     style B fill:#0f172a,stroke:#00e5ff,stroke-width:2px,color:#fff
-    style C fill:#0f172a,stroke:#00ff41,stroke-width:2px,color:#fff
-    style D fill:#0f172a,stroke:#b000ff,stroke-width:2px,color:#fff
-    style E fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#fff
-    style G fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style H fill:#1a0505,stroke:#f59e0b,stroke-width:2px,color:#fff
     style F fill:#1a0505,stroke:#ff3b30,stroke-width:2px,color:#fff
 ```
 
-### Core Capabilities
+---
 
-* **Active-Tab Optic Scanner** — Parallel computer vision frame analysis matched with live DOM structure extraction and mutation sequencing tracking. SNAP results are injected as contextual updates into the live voice session.
-* **Autonomous Hand-Simulating RPA** — Deterministic automation interface using native value setters + `execCommand` / paste fallbacks for React, Vue, Draft.js, LinkedIn, X, and enterprise ERPs, with focus-memory tracking.
-* **Sub-400ms WebRTC Voice Flow** — Native audio pipeline using ElevenLabs conversational agents + client-side `AudioWorkletNode` for high-frequency PCM16 / µ-law processing.
-* **Bright Data Industrial Unlock** — Web Unlocker for anti-bot pages, GIS / parcel / assessor lookups, SERP, and protected portal extraction (competitor stock, carrier FNOL, municipal permit engines).
-* **Unified Data Recon (via Monid)** — On-demand access to 1,500+ scrapers and APIs for lead enrichment, social intel, market data, competitor tracking, and more.
-* **Persistent Memory Layer** — Long-term facts are recorded (`[MEMORY_SAVE: …]`), compiled, and force-injected back into the runtime context on every session start.
-* **Field Operator Mode** — Meter-true device GPS fused with optic + GIS unlock so the agent knows *where* without spending vision budget on location.
+## What it is / is not
+
+| It is | It is not |
+|---|---|
+| A local desktop agent for the operator who loaded it | A Chrome Web Store extension |
+| BYOK — keys stay in the sidecar | A multi-tenant SaaS proxy that holds your keys |
+| One Meet seat: your camera, Nexus on your mic | A second named participant / meeting bot |
+| Unpacked load on a machine you control | Remote-control malware, a RAT, or a silent implant |
+
+If you did not load it, it does nothing. If you mute Meet, Nexus is muted too.
 
 ---
 
-## 🛡️ Enterprise-Grade HIPAA Gateway Protocol
+## Core capabilities
 
-When deployed in clinical environments, medical workflows demand strict data processing guidelines. The LensDNA console includes a dedicated **HIPAA and Zero-Retention Mode (ZRM)** gateway to keep protected health information (PHI) secure.
+* **Active-tab optic scanner** — Vision frame + live DOM. SNAP lands in the same voice turn via `sendContextualUpdate`.
+* **Hand-simulating RPA** — Native value setters + `execCommand` / paste fallbacks. Focus memory so the side panel does not steal the target field.
+* **WebRTC voice** — ElevenLabs conversational agent + `AudioWorklet` PCM16 / µ-law.
+* **Meet dual audio (v1.2)** — One 🎧 toggle, default **off**. Out: Nexus TTS mixed into your Meet microphone. In: Meet playback tapped into Nexus so headphones do not deafen the agent. No VB-Cable. Chrome Meet tab only. Details: [`MEET_INJECT.md`](./MEET_INJECT.md).
+* **Bright Data industrial unlock** — Web Unlocker, GIS / parcel, SERP, protected portals.
+* **Monid recon** — On-demand scrapers and APIs for leads, social, market, competitor intel.
+* **Persistent memory** — `[MEMORY_SAVE: …]` compiled and rehydrated on every uplink.
+* **Field Operator** — Meter-true device GPS fused with optic + GIS so vision budget goes to *what*, not *where*.
+* **Outbound SIP dialer** — Twilio proxy, live agent dispatch or audio injection to an E.164 number.
+* **8-channel studio matrix** — Client-side stems, faders, lyric alignment.
+
+---
+
+## Meet seat — 🎧 dual audio
+
+Boardy (or anyone else in the room) hears Nexus **as you**. Meet still shows one tile.
+
+1. Open Meet in this Chrome profile. Headphones on.  
+2. Side panel → **INITIATE UPLINK**.  
+3. Click **🎧**. Amber = armed.  
+4. Stay **unmuted** in Meet. Mute kills both voices.  
+5. Sit on camera. Stay quiet. Nexus talks and hears the room.
+
+If uplink was already live and Nexus ignores the room: **DISCONNECT**, leave 🎧 armed, **INITIATE UPLINK** again. ElevenLabs takes the mic once at session start.
+
+Zoom desktop and Meet mobile are out of scope. Speakers + 🎧 = echo.
+
+---
+
+## Runtime and distribution
+
+Current runtime: unpacked Chromium sidecar (`manifest.json` at the repo root).
+
+**Not submitted to the Chrome Web Store.** Broad host access + RPA + tab audio + mic mix is a desktop-agent permission model. Store review scores that surface as unwanted software. We do not ask Google to bless it as a toy extension.
+
+Roadmap for the host is a signed desktop shell (Tauri / native) that owns the process and treats Chromium as the viewport — same agent, clearer category. This repo remains the open sidecar.
+
+---
+
+## HIPAA / Zero-Retention gateway
+
+Clinical desks need a hard gate, not a promise.
 
 ```mermaid
 flowchart LR
-    A[Intake Desk<br/>PHI & Clinical Data] --> B{Zero-Retention Mode<br/>+ Signed BAA}
+    A[Intake desk<br/>PHI] --> B{ZRM + signed BAA<br/>+ Enterprise}
 
-    B -->|Enabled| C[Secure Endpoints<br/>No-Retention LLMs<br/>ElevenLabs API]
-    B -->|Enabled| D[Local Persistence<br/>BLOCKED & PURGED]
-
-    B -->|Not Fully Eligible| E[Standard Mode<br/>Local Cache Active]
+    B -->|On| C[No-retention LLM + voice endpoints]
+    B -->|On| D[Local persistence BLOCKED]
+    B -->|Off| E[Standard local cache]
 
     style B fill:#1a0505,stroke:#ff3b30,stroke-width:2px,color:#fff
     style C fill:#0f172a,stroke:#00ff41,stroke-width:2px,color:#fff
     style D fill:#0f172a,stroke:#ef4444,stroke-width:2px,color:#fff
-    style E fill:#0f172a,stroke:#6b7280,stroke-width:1px,color:#fff
 ```
 
-### Compliance Implementation
-
-* **Zero Local Cache Footprint** — Once ZRM is toggled with an active Business Associate Agreement (BAA), LensDNA blocks all writes of conversational data, clinical summaries, or page extractions to local extension storage / Chrome storage.
-* **Custom LLM Provider Safety Gating** — If a non-preconfigured LLM is selected while ZRM is active, the client requires explicit acknowledgment that the custom endpoint is covered under a valid BAA.
-* **Preconfigured Eligible Directory** — Direct compatibility with verified HIPAA-eligible models (Gemini 2.5 Flash family, Claude Sonnet / Opus / Haiku 4.x series, and ElevenLabs voice endpoints).
+* ZRM + Enterprise + signed BAA → no writes of transcripts, clinical summaries, or page extracts to `chrome.storage` / local cache.  
+* Custom LLM while ZRM is on requires an explicit BAA acknowledgment.  
+* Preconfigured eligible directory includes Gemini 2.5 Flash family, Claude Sonnet / Opus / Haiku 4.x, and ElevenLabs voice endpoints.
 
 ---
 
-## 🎛️ Multimodal Console Modules
+## Local install
 
-Beyond standard browser automation, LensDNA includes production-ready media modules:
+Sovereign load. You pick the folder. Nothing is pushed from a store.
 
-### 1. Outbound SIP Proxy Dialer
-Bridged to standard telephony networks via Twilio proxies.
-* **Live Agent Dispatching** — Routes the logic model (Grok / Gemini) to any E.164 telephone number.
-* **Direct Audio Injection** — Streams generated audio compositions into live phone calls (alerts, compliance messages, remote delivery).
-
-### 2. 8-Channel Studio Matrix Mixer
-Client-side synthesizer deck powered by a cross-tab `BroadcastChannel` bridge.
-* **Synchronized Stem Generation** — Up to 8 parallel audio stems (vocals, instruments, SFX).
-* **Interactive Fader Board** — Vertical equalizers for volume, pan, LO / MID / HI EQ, and weight focus.
-* **Vocal Alignment** — Timing alignment that maps and scrolls lyric content in sync with playback.
-
----
-
-## 🛠️ Local Installation
-
-As a sovereign tool designed for complete client-side data governance, LensDNA runs entirely in your local browser runtime.
-
-### Step 1 — Clone the Repository
 ```bash
 git clone https://github.com/kaascanvas/LensDNA-Extension.git
-# or download and extract the source ZIP
 ```
 
-### Step 2 — Enable Developer Mode in Google Chrome
-1. Navigate to `chrome://extensions/`
-2. Turn **ON** the **Developer mode** toggle (top-right).
-3. Click **Load unpacked**.
-4. Select the folder that contains `manifest.json`.
+1. Chrome / Brave / Edge → `chrome://extensions/`  
+2. **Developer mode** ON  
+3. **Load unpacked** → select the folder that contains `manifest.json`  
+4. Pin **LensDNA Sovereign Agent**  
+5. Open the side panel. Fill the **Sovereign Keyring** (BYOK):
 
-### Step 3 — Keyring Configuration & Initialization
-1. Pin the **LensDNA Sovereign Agent** extension.
-2. Open the Side Panel console.
-3. Enter your keys in the **Sovereign Keyring**:
-   * **ElevenLabs API Key** — WebRTC conversational loop
-   * **Gemini / Grok / Claude Key** — Logic + vision
-   * **Bright Data API Key** — Web Unlocker, GIS parcel unlock, SERP, protected portals
-   * **Monid API Key** — Data recon & scraper pipelines
-   * **Fish Audio Key** *(optional)*
-4. Click **INITIATE UPLINK**.
+   | Key | Role |
+   |---|---|
+   | ElevenLabs | Voice loop |
+   | Gemini / Grok / Claude | Logic + vision |
+   | Bright Data | Unlock / GIS / SERP |
+   | Monid | Recon pipelines |
+   | Fish Audio | Optional TTS |
 
----
+6. **INITIATE UPLINK**
 
-## 📦 Changelog
-
-### v1.1.0 — Client Tools, Optic Loop & Bright Data Surface
-* Formal client-tool aliases aligned with agent tool calls (`type_text_in_active_page`, `click_element_in_active_page`, `read_active_tab_data`, `report_field_position`, `forge_dossier`).
-* Unified postMessage bridge so overlays / embeds share the same DOM hands as the side panel.
-* SNAP optic analysis injected via `sendContextualUpdate` into the live voice turn.
-* Transcript cards auto-link markdown and bare HTTPS URLs.
-* Bright Data documented in architecture (Web Unlocker · GIS · SERP · portal unlock) and keyring setup.
-* Field Operator GPS exposed as a callable tool (`report_field_position`).
-
-### v1.0.2 — Monid & Data Recon Integration
-* Full Monid.ai keyring integration.
-* Agent can discover, call, and poll from 1,500+ modular data tools.
-* Live extraction results feed directly back into the Logic Kernel for immediate viewport actions.
-
-### v1.0.1 — Client-Side Memory Re-hydration
-* Persistent memory facts are force-injected into the runtime context on every session start.
-* Improved WebRTC audio stability under heavy DOM manipulation.
+See [`INSTALL_INSTRUCTIONS.txt`](./INSTALL_INSTRUCTIONS.txt) and [`MEET_INJECT.md`](./MEET_INJECT.md).
 
 ---
 
-## ⚖️ Custom Deployment & Enterprise Integrations
+## Changelog
 
-Need a white-labeled Electron desktop app, custom backend bridges, industry-specific tool packs, or full Zero-Retention hardening?
+### v1.2.0 — Desktop-agent seat + Meet dual audio
+* Category language: desktop agent, local sidecar, not a store extension.  
+* 🎧 on-demand dual audio on Google Meet (speak on your mic track, hear Meet playback).  
+* MAIN-world `getUserMedia` / `RTCPeerConnection` mix (`inject-meet-mix.js`).  
+* `tabCapture` ear + Meet media `captureStream` fallback.  
+* Default off. Headphones required.
 
-We build **Custom Automation Cartridges**.
+### v1.1.0 — Client tools, optic loop & Bright Data surface
+* Tool aliases aligned with the agent (`type_text_in_active_page`, `click_element_in_active_page`, `read_active_tab_data`, `report_field_position`, `forge_dossier`).  
+* postMessage bridge so overlays share the same DOM hands.  
+* SNAP → `sendContextualUpdate`.  
+* Field Operator GPS as a callable tool.
 
-* 📧 **Architect**: [hans@lensdj.app](mailto:hans@lensdj.app)
-* 🐦 **X**: [@LensDJing](https://x.com/LensDJing)
-* 🌐 **Website**: [lensdj.app](https://lensdj.app)
-* 🔑 **Monid**: [monid.ai](https://monid.ai)
-* 🔓 **Bright Data**: [brightdata.com](https://brightdata.com)
+### v1.0.2 — Monid recon
+* Keyring + discover / run / poll across 1,500+ modular tools.
+
+### v1.0.1 — Memory rehydration
+* Persistent facts force-injected on every session start.
 
 ---
 
-*Built for secure, high-value visual workflows inside the legacy environments that general cloud assistants cannot reach.*
+## Custom cartridges
 
-**License**: MIT | **Development**: Active Maintenance | **System Design**: Sovereign BYOK
+White-label desktop host, industry tool packs, Zero-Retention hardening, or a signed shell instead of the sidecar.
+
+* Architect: [hans@lensdj.app](mailto:hans@lensdj.app)  
+* X: [@LensDJing](https://x.com/LensDJing)  
+* Site: [lensdj.app](https://lensdj.app)  
+* Monid: [monid.ai](https://monid.ai)  
+* Bright Data: [brightdata.com](https://brightdata.com)
+
+---
+
+**License:** MIT  
+**Distribution:** local unpacked sidecar — not Chrome Web Store  
+**System design:** sovereign BYOK desktop agent

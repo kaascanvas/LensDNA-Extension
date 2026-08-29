@@ -1,40 +1,34 @@
-LensDNA Sovereign Agent - Chrome Extension v1.0.1
+LensDNA Sovereign Agent - Chrome Extension v1.2.0
 =================================================
 
-Welcome to the Omnipresent AI Co-Pilot & WebRTC Audio Engine.
-Because this is a Sovereign OS tool, it is installed locally on your machine.
+Meet dual audio build. 🎧 in the command hub mixes Nexus into your Google Meet
+seat and feeds Meet playback back into Nexus. Headphones on. Default off.
 
-CHANGELOG v1.0.1
-- Fixed Persistent Memory re-hydration bridge: stored facts are now force-injected into Nexus Prime runtime context on every session start (client-side fallback if server-side injection fails).
-- Version bump for stress-test stability.
+CHANGED IN THIS ZIP
+- manifest.json          v1.2.0, document_start, web_accessible inject-meet-mix.js
+- background.js          tabCapture stream-id helper
+- content.js             Meet hook + PCM relay + SET_MEET_INJECTION
+- sidepanel.html         🎧 dual-audio button
+- sidepanel.js           GUM wrap, TTS inject, Meet ear
+- inject-meet-mix.js     NEW — MAIN-world Meet mixer
+- MEET_INJECT.md         how to arm 🎧
 
-Follow these 5 simple steps to install the extension in Google Chrome, Brave, or Edge:
+UNCHANGED
+- elevenlabs-client.js, raw-audio-processor.js, audio-concat-processor.js
+- socket.io.min.js, app-icon.png, LICENSE
 
-STEP 1: EXTRACT THE ZIP FILE
-Extract (unzip) this downloaded folder to a safe location on your computer (for example, your Documents or Desktop folder).
+INSTALL
+1. Unzip this folder. Keep all files together (manifest.json at the root).
+2. Chrome → chrome://extensions/ → Developer mode ON.
+3. Load unpacked → select this folder.
+4. If you already had LensDNA loaded: Remove the old one, or click Reload
+   on this unpacked folder so v1.2.0 replaces it.
+5. Pin the icon. Open the side panel. Enter keys. INITIATE UPLINK.
+6. Open meet.google.com in the same Chrome profile. Hard-refresh the Meet tab.
+7. Headphones on. Click 🎧 (amber = dual audio). Stay unmuted in Meet.
 
-STEP 2: OPEN CHROME EXTENSIONS
-Open Google Chrome and type the following into your URL address bar, then press Enter:
-chrome://extensions/
+If Nexus is already live and ignores Boardy: DISCONNECT, leave 🎧 armed,
+then INITIATE UPLINK again.
 
-STEP 3: ENABLE DEVELOPER MODE
-In the top right corner of the Extensions page, you will see a toggle switch labeled "Developer mode". 
-Click it to turn it ON.
-
-STEP 4: LOAD UNPACKED
-Once Developer Mode is on, a new menu bar will appear at the top left. 
-Click the button that says "Load unpacked". 
-A file browser window will open. Select the unzipped folder from Step 1 (make sure you select the folder containing the manifest.json file).
-
-STEP 5: PIN & UPLINK
-The LensDNA extension is now installed! 
-1. Click the "Puzzle Piece" icon in the top right of your Chrome browser.
-2. Find "LensDNA Sovereign Agent" and click the "Pin" icon next to it.
-3. Click the newly pinned LensDNA icon to open the Side Panel console.
-4. Enter your API keys into the Sovereign Keyring and click "INITIATE UPLINK".
-
----
-Need Help? 
-Contact Support: https://x.com/LensDJing
+Support: https://x.com/LensDJing
 Architect: Hans Johannes Schulte (LensDNA OS)
-

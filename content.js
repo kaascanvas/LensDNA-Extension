@@ -1,8 +1,32 @@
 /**
- * LensDNA Sovereign Agent — Content Script (v1.1)
- * Native DOM RPA, React/Vue/Draft.js typing, focus memory, mutation tracking,
- * and a unified postMessage bridge so overlays / embeds share the same hands.
+ * LensDNA Sovereign Agent — Content Script (v1.1.1)
+ * Native DOM RPA + Meet MAIN-world mic mix hook.
  */
+
+(function injectMeetMix() {
+  try {
+    const href = String(location.href || '');
+    if (!/meet\.google\.com/i.test(href)) return;
+    if (document.documentElement.getAttribute('data-lensdna-meet-mix') === '1') return;
+    document.documentElement.setAttribute('data-lensdna-meet-mix', '1');
+    const s = document.createElement('script');
+    s.src = chrome.runtime.getURL('inject-meet-mix.js');
+    s.async = false;
+    (document.head || document.documentElement).appendChild(s);
+    s.addEventListener('load', () => { try { s.remove(); } catch (_) {} });
+    window.addEventListener('message', (event) => {
+      if (event.source !== window) return;
+      const d = event.data;
+      if (!d || d.__lensdna !== 'meet-mix-playback' || !d.pcm) return;
+      try {
+        chrome.runtime.sendMessage({
+          action: 'MEET_PLAYBACK_PCM',
+          data: { pcm: d.pcm, sampleRate: d.sampleRate || 16000 },
+        }).catch(() => {});
+      } catch (_) {}
+    });
+  } catch (_) {}
+})();
 
 // ---------------------------------------------------------------------------
 // Focus memory — last editable before side panel / overlay stole focus
@@ -370,10 +394,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse(updateDomForm(data));
         break;
 
+      case 'SET_MEET_INJECTION':
+        window.postMessage(
+          { __lensdna: 'meet-mix', cmd: 'setInjection', on: !!(data && data.on) },
+          '*'
+        );
+        sendResponse({
+          ok: true,
+          meet: /meet\.google\.com/i.test(location.href),
+          on: !!(data && data.on),
+        });
+        break;
+
+      case 'MEET_TTS_CHUNK':
+        window.postMessage(
+          {
+            __lensdna: 'meet-mix',
+            cmd: 'tts',
+            pcm: data && data.pcm,
+            sampleRate: (data && data.sampleRate) || 16000,
+          },
+          '*'
+        );
+        sendResponse({ ok: true });
+        break;
+
       case 'PING':
         sendResponse({
           ok: true,
-          version: '1.1',
+          version: '1.2.0',
           url: location.href,
           mutationCount,
         });

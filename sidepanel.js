@@ -697,6 +697,237 @@ if (btnSilence) {
     });
 }
 
+window.meetVoiceInjectActive = false;
+
+const _lensOrigGUM = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+    ? navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+    : null;
+
+const dualAudio = {
+    ctx: null,
+    dest: null,
+    micGain: null,
+    meetGain: null,
+    micSource: null,
+    micStream: null,
+    tabStream: null,
+    tabSource: null,
+    nextMeet: 0,
+    wrapped: false,
+};
+
+function isTabCaptureConstraint(constraints) {
+    const audio = constraints && constraints.audio;
+    if (!audio || typeof audio !== 'object') return false;
+    const src = audio.mandatory && audio.mandatory.chromeMediaSource;
+    const src2 = audio.chromeMediaSource;
+    return src === 'tab' || src2 === 'tab';
+}
+
+function ensureDualGraph() {
+    if (dualAudio.ctx) return dualAudio;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    dualAudio.ctx = new Ctx({ sampleRate: 24000 });
+    dualAudio.dest = dualAudio.ctx.createMediaStreamDestination();
+    dualAudio.micGain = dualAudio.ctx.createGain();
+    dualAudio.meetGain = dualAudio.ctx.createGain();
+    dualAudio.micGain.gain.value = 1;
+    dualAudio.meetGain.gain.value = 0.9;
+    dualAudio.micGain.connect(dualAudio.dest);
+    dualAudio.meetGain.connect(dualAudio.dest);
+    dualAudio.nextMeet = 0;
+    return dualAudio;
+}
+
+async function attachUserMicToDual() {
+    ensureDualGraph();
+    if (dualAudio.micSource) return;
+    dualAudio.micStream = await _lensOrigGUM({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+    });
+    dualAudio.micSource = dualAudio.ctx.createMediaStreamSource(dualAudio.micStream);
+    dualAudio.micSource.connect(dualAudio.micGain);
+    if (dualAudio.ctx.state === 'suspended') await dualAudio.ctx.resume().catch(() => {});
+}
+
+async function attachTabCaptureToDual() {
+    if (!_lensOrigGUM || !chrome.runtime || !chrome.runtime.sendMessage) return false;
+    const tabs = await getMeetTabs();
+    if (!tabs.length) return false;
+    try {
+        const res = await chrome.runtime.sendMessage({
+            action: 'GET_TAB_CAPTURE_STREAM_ID',
+            tabId: tabs[0].id,
+        });
+        if (!res || !res.ok || !res.streamId) return false;
+        dualAudio.tabStream = await _lensOrigGUM({
+            audio: {
+                mandatory: {
+                    chromeMediaSource: 'tab',
+                    chromeMediaSourceId: res.streamId,
+                },
+            },
+        });
+        ensureDualGraph();
+        dualAudio.tabSource = dualAudio.ctx.createMediaStreamSource(dualAudio.tabStream);
+        dualAudio.tabSource.connect(dualAudio.meetGain);
+        return true;
+    } catch (err) {
+        console.warn('[LensDNA] tabCapture listen failed, using Meet PCM tap', err);
+        return false;
+    }
+}
+
+function feedMeetPlaybackPcm(b64, sampleRate) {
+    if (!window.meetVoiceInjectActive || !b64) return;
+    if (dualAudio.tabSource) return;
+    ensureDualGraph();
+    if (dualAudio.ctx.state === 'suspended') dualAudio.ctx.resume().catch(() => {});
+    let raw;
+    try { raw = atob(b64); } catch (_) { return; }
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    if (bytes.byteLength < 2) return;
+    const aligned = bytes.byteOffset % 2 === 0 ? bytes : bytes.slice();
+    const pcm16 = new Int16Array(aligned.buffer, aligned.byteOffset, Math.floor(aligned.byteLength / 2));
+    const f32 = new Float32Array(pcm16.length);
+    for (let i = 0; i < pcm16.length; i++) f32[i] = pcm16[i] / 32768;
+    const rate = sampleRate || 16000;
+    const buf = dualAudio.ctx.createBuffer(1, f32.length, rate);
+    buf.copyToChannel(f32, 0);
+    const src = dualAudio.ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(dualAudio.meetGain);
+    const now = dualAudio.ctx.currentTime;
+    if (dualAudio.nextMeet < now + 0.02) dualAudio.nextMeet = now;
+    src.start(dualAudio.nextMeet);
+    dualAudio.nextMeet += buf.duration;
+}
+
+function installDualGumWrap() {
+    if (dualAudio.wrapped || !_lensOrigGUM) return;
+    dualAudio.wrapped = true;
+    navigator.mediaDevices.getUserMedia = async function (constraints) {
+        if (!window.meetVoiceInjectActive || isTabCaptureConstraint(constraints)) {
+            return _lensOrigGUM(constraints);
+        }
+        const wantsAudio = !constraints || constraints.audio;
+        if (!wantsAudio) return _lensOrigGUM(constraints);
+        await attachUserMicToDual();
+        const mixed = new MediaStream(dualAudio.dest.stream.getAudioTracks());
+        if (constraints && constraints.video) {
+            const v = await _lensOrigGUM({ video: constraints.video });
+            v.getVideoTracks().forEach((t) => mixed.addTrack(t));
+        }
+        return mixed;
+    };
+}
+
+async function refreshAgentMicInput() {
+    const conv = audioConversation;
+    if (!conv) return false;
+    const tryNames = ['setAudioInputDevice', 'changeInputDevice', 'setInputDevice'];
+    for (const name of tryNames) {
+        if (typeof conv[name] === 'function') {
+            try {
+                await conv[name]();
+                return true;
+            } catch (_) {}
+        }
+    }
+    return false;
+}
+
+function stopDualListen() {
+    if (dualAudio.tabSource) {
+        try { dualAudio.tabSource.disconnect(); } catch (_) {}
+        dualAudio.tabSource = null;
+    }
+    if (dualAudio.tabStream) {
+        dualAudio.tabStream.getTracks().forEach((t) => t.stop());
+        dualAudio.tabStream = null;
+    }
+}
+
+async function startDualListen() {
+    installDualGumWrap();
+    await attachUserMicToDual();
+    const tabOk = await attachTabCaptureToDual();
+    return { tabCapture: tabOk };
+}
+
+installDualGumWrap();
+
+async function getMeetTabs() {
+    if (typeof chrome === 'undefined' || !chrome.tabs) return [];
+    const tabs = await chrome.tabs.query({ url: ['https://meet.google.com/*'] });
+    return (tabs || []).filter((t) => t.id);
+}
+
+async function setMeetInjectionOnTabs(on) {
+    const tabs = await getMeetTabs();
+    if (!tabs.length) return { ok: false, reason: 'no_meet_tab' };
+    let armed = 0;
+    for (const tab of tabs) {
+        try {
+            await chrome.tabs.sendMessage(tab.id, { action: 'SET_MEET_INJECTION', data: { on: !!on } });
+            armed += 1;
+        } catch (err) {
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    files: ['content.js'],
+                });
+                await chrome.tabs.sendMessage(tab.id, { action: 'SET_MEET_INJECTION', data: { on: !!on } });
+                armed += 1;
+            } catch (_) {}
+        }
+    }
+    return { ok: armed > 0, armed, total: tabs.length };
+}
+
+async function pushTtsToMeet(pcmBase64, sampleRate) {
+    if (!window.meetVoiceInjectActive || !pcmBase64) return;
+    const tabs = await getMeetTabs();
+    for (const tab of tabs) {
+        chrome.tabs.sendMessage(tab.id, {
+            action: 'MEET_TTS_CHUNK',
+            data: { pcm: pcmBase64, sampleRate: sampleRate || 16000 },
+        }).catch(() => {});
+    }
+}
+
+const btnMeetInject = document.getElementById('btnMeetInject');
+if (btnMeetInject) {
+    btnMeetInject.addEventListener('click', async () => {
+        const turningOn = !window.meetVoiceInjectActive;
+        const result = await setMeetInjectionOnTabs(turningOn);
+        if (turningOn && !result.ok) {
+            appendTranscript('System', '🎧 No Google Meet tab found. Open meet.google.com in this Chrome profile, then click 🎧 again.');
+            return;
+        }
+        window.meetVoiceInjectActive = turningOn;
+        if (turningOn) {
+            btnMeetInject.style.color = '#000';
+            btnMeetInject.style.background = '#f59e0b';
+            btnMeetInject.style.borderColor = '#f59e0b';
+            const listen = await startDualListen();
+            const swapped = await refreshAgentMicInput();
+            const ear = listen.tabCapture ? 'tabCapture' : 'Meet media tap';
+            appendTranscript('System', `🎧 Dual audio ARMED. Nexus speaks on your Meet seat and hears the room via ${ear}. Headphones on. Stay unmuted in Meet.`);
+            if (audioConversation && !swapped) {
+                appendTranscript('System', '🎧 Uplink already live: if Nexus ignores Boardy, click DISCONNECT then INITIATE UPLINK so the agent picks up the mixed ear.');
+            }
+        } else {
+            stopDualListen();
+            btnMeetInject.style.color = '#f59e0b';
+            btnMeetInject.style.background = 'transparent';
+            btnMeetInject.style.borderColor = '#f59e0b';
+            appendTranscript('System', '🎧 Dual audio OFF. Room will not hear Nexus. Nexus is back on your physical mic only.');
+        }
+    });
+}
+
 btnConnect.addEventListener('click', async () => {
     if (btnConnect.innerText === "CONNECTING...") return; 
 
@@ -1912,13 +2143,20 @@ btnConnect.addEventListener('click', async () => {
                         }
                     }
                 },
+            onAudio: (audioBase64) => {
+                if (window.meetVoiceInjectActive && audioBase64) {
+                    pushTtsToMeet(audioBase64, 16000);
+                }
+            },
             onModeChange: (mode) => {
                 if (mode.mode === 'speaking') {
                     orb.style.boxShadow = "0 0 40px rgba(0,255,65,0.8)";
                     orb.style.background = "radial-gradient(circle, rgba(0,255,65,0.8), transparent)";
+                    if (dualAudio.meetGain) dualAudio.meetGain.gain.value = 0.15;
                 } else {
                     orb.style.boxShadow = "0 0 20px rgba(0,229,255,0.5)";
                     orb.style.background = "radial-gradient(circle, rgba(0,229,255,0.8), transparent)";
+                    if (dualAudio.meetGain) dualAudio.meetGain.gain.value = 0.9;
                 }
             },
 
@@ -2898,6 +3136,11 @@ if (btnToggleCommandHub && commandHubContainer) {
 // --- AGENT UPLINK FOR PASSIVE DOM & CROSS-TAB MEMORY ---
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === 'MEET_PLAYBACK_PCM') {
+            feedMeetPlaybackPcm(request.data && request.data.pcm, request.data && request.data.sampleRate);
+            return;
+        }
+
         if (request.action === 'TAB_CONTEXT_SWITCH') {
             const contextMsg = `[SYSTEM MEMORY] User switched to a new tab: ${request.data.title} (${request.data.url}). Treat this as the new primary context. Do not discuss music or stems.`;
             window.lastPastedContext = contextMsg;

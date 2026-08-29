@@ -20,6 +20,31 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // --- 1. Persistent Cross-Tab Memory Tracker ---
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request && request.action === 'GET_TAB_CAPTURE_STREAM_ID') {
+    const tabId = request.tabId || sender.tab && sender.tab.id;
+    if (!tabId) {
+      sendResponse({ ok: false, error: 'no_tab' });
+      return false;
+    }
+    try {
+      chrome.tabCapture.getMediaStreamId({ targetTabId: tabId }, (streamId) => {
+        const err = chrome.runtime.lastError && chrome.runtime.lastError.message;
+        if (err || !streamId) {
+          sendResponse({ ok: false, error: err || 'no_stream_id' });
+          return;
+        }
+        sendResponse({ ok: true, streamId });
+      });
+      return true;
+    } catch (err) {
+      sendResponse({ ok: false, error: String(err && err.message || err) });
+      return false;
+    }
+  }
+  return false;
+});
+
 chrome.tabs.onActivated.addListener((activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
     if (tab && tab.url && !tab.url.startsWith("chrome://")) {
